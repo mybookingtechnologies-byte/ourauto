@@ -1,14 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { RecaptchaWidget } from "@/components/security/recaptcha-widget";
+import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [token, setToken] = useState("");
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
   async function signup() {
+    if (!executeRecaptcha) {
+      alert("Verification not ready");
+      return;
+    }
+    const token = await executeRecaptcha("signup");
+    if (!token) {
+      alert("Verification failed");
+      return;
+    }
     try {
       const response = await fetch("/api/auth/signup", {
         method: "POST",
@@ -38,7 +47,7 @@ export default function SignupPage() {
         value={password}
         onChange={(event) => setPassword(event.target.value)}
       />
-      <RecaptchaWidget onToken={setToken} />
+      {/* reCAPTCHA widget removed, token handled in submit */}
       <button type="button" className="cta" onClick={signup}>
         Create Account
       </button>

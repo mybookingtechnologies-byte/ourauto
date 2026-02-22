@@ -38,9 +38,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} bg-background text-foreground antialiased`}
       >
-        <ThemeProvider>
-          {children}
-        </ThemeProvider>
+            <ThemeProvider>
+              <GoogleReCaptchaProvider
+                reCaptchaKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
+                scriptProps={{ async: true, defer: true }}
+              >
+                {children}
+              </GoogleReCaptchaProvider>
+            </ThemeProvider>
       </body>
     </html>
   );
