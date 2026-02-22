@@ -1,61 +1,62 @@
 import { NextResponse } from "next/server";
 
-const protectedPagePrefixes = ["/dashboard", "/listings/new"];
-const protectedApiPrefixes = [
-  "/api/listings/",
-  "/api/ocr-check",
-  "/api/wishlist",
-  "/api/chat/initiate",
-  "/api/notifications",
-  "/api/referral/wallet",
-];
-
-function hasAuthCookie(cookieHeader: string) {
-  return (
-    cookieHeader.includes("sb-access-token=") ||
-    cookieHeader.includes("sb-refresh-token=") ||
-    (cookieHeader.includes("sb-") && cookieHeader.includes("-auth-token="))
-  );
-}
-
 export function middleware(request: Request) {
-  const url = new URL(request.url);
-  const pathname = url.pathname;
+  try {
+    const requestUrl = typeof request?.url === "string" ? request.url : "";
+    if (!requestUrl) {
+      return NextResponse.next();
+    }
 
-  const response = NextResponse.next();
+    let pathname = "";
+    try {
+      pathname = new URL(requestUrl).pathname || "";
+    } catch {
+      return NextResponse.next();
+    }
 
-  response.headers.set("X-Frame-Options", "DENY");
-  response.headers.set("X-Content-Type-Options", "nosniff");
-  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  response.headers.set(
-    "Content-Security-Policy",
-    "default-src 'self'; img-src 'self' https: data:; media-src 'self' https:; script-src 'self' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; frame-src https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; frame-ancestors 'none';"
-  );
+    if (!pathname) {
+      return NextResponse.next();
+    }
 
-  const isProtectedPage = protectedPagePrefixes.some((prefix) => pathname.startsWith(prefix));
-  const isProtectedApi =
-    (pathname === "/api/listings" && request.method === "POST") ||
-    protectedApiPrefixes.some((prefix) => pathname.startsWith(prefix));
+    const isProtectedPage = pathname === "/listings/new" || pathname === "/dashboard" || pathname.startsWith("/dashboard/");
+    const isProtectedApi =
+      pathname === "/api/ocr-check" ||
+      pathname === "/api/wishlist" ||
+      pathname === "/api/chat/initiate" ||
+      pathname === "/api/notifications" ||
+      pathname === "/api/referral/wallet";
 
-  if (!isProtectedPage && !isProtectedApi) {
-    return response;
+    if (!isProtectedPage && !isProtectedApi) {
+      return NextResponse.next();
+    }
+
+    const cookieHeader = request?.headers?.get?.("cookie") || "";
+    const isAuthenticated =
+      cookieHeader.includes("sb-access-token=") || cookieHeader.includes("sb-refresh-token=");
+
+    if (isAuthenticated) {
+      return NextResponse.next();
+    }
+
+    if (isProtectedApi) {
+      return new NextResponse('{"error":"Unauthorized"}', { status: 401 });
+    }
+
+    const loginUrl = new URL("/auth/login", requestUrl);
+    return NextResponse.redirect(loginUrl);
+  } catch {
+    return NextResponse.next();
   }
-
-  const cookieHeader = request.headers.get("cookie") ?? "";
-  if (hasAuthCookie(cookieHeader)) {
-    return response;
-  }
-
-  if (pathname.startsWith("/api/")) {
-    return NextResponse.json({ error: "Authentication required." }, { status: 401 });
-  }
-
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-  const loginUrl = appUrl ? new URL("/auth/login", appUrl) : new URL("/auth/login", request.url);
-  loginUrl.searchParams.set("next", pathname);
-  return NextResponse.redirect(loginUrl);
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    "/dashboard/:path*",
+    "/listings/new",
+    "/api/ocr-check",
+    "/api/wishlist",
+    "/api/chat/initiate",
+    "/api/notifications",
+    "/api/referral/wallet",
+  ],
 };
