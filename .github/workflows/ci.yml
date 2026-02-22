@@ -1,0 +1,69 @@
+name: CI Gate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_RECAPTCHA_SITE_KEY: ${{ secrets.NEXT_PUBLIC_RECAPTCHA_SITE_KEY }}
+      RECAPTCHA_SECRET_KEY: ${{ secrets.RECAPTCHA_SECRET_KEY }}
+      OCR_EDGE_FUNCTION_URL: ${{ secrets.OCR_EDGE_FUNCTION_URL }}
+      SUSPICIOUS_KEYWORDS: ${{ secrets.SUSPICIOUS_KEYWORDS }}
+      SMOKE_BASE_URL: http://127.0.0.1:3000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 18 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate environment variables
+        run: npm run validate:env
+
+      - name: TypeScript strict typecheck
+        run: npm run typecheck
+
+      - name: ESLint strict (no warnings)
+        run: npm run lint:ci
+
+      - name: Next.js production build
+        run: npm run build
+
+      - name: Start production server
+        run: |
+          npm run start -- --hostname 127.0.0.1 --port 3000 > /tmp/next-start.log 2>&1 &
+          echo $! > /tmp/next-start.pid
+
+      - name: Run minimal API smoke tests
+        run: npm run test:smoke:api
+
+      - name: Stop production server
+        if: always()
+        run: |
+          if [ -f /tmp/next-start.pid ]; then
+            kill $(cat /tmp/next-start.pid) || true
+          fi
+
+      - name: Upload server logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-start-log
+          path: /tmp/next-start.log
