@@ -9,7 +9,7 @@ export default function ContactPage() {
       <div className="card mt-4 space-y-2 text-sm text-muted">
         <p>Email: <a href="mailto:support@ourauto.app">support@ourauto.app</a></p>
         <p>Business hours: Mon-Sat, 9:00 AM - 6:00 PM (IST)</p>
-        <p>For urgent security issues, include "Security" in the subject line.</p>
+        <p>For urgent security issues, include &quot;Security&quot; in the subject line.</p>
       </div>
     </main>
   );

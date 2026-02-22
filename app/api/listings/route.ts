@@ -3,10 +3,11 @@ import { z } from "zod";
 import { computeHotDealCredits } from "@/lib/business/credits";
 import { requireAuthenticatedUser } from "@/lib/auth/session";
 import { logEvent } from "@/lib/monitoring/logger";
-import { hasSuspiciousKeyword, verifyRecaptcha } from "@/lib/security/filters";
+import { hasSuspiciousKeyword } from "@/lib/security/filters";
 import { consumeDbRateLimit } from "@/lib/security/rate-limit";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getListings } from "@/lib/data/listings";
+import { verifyRecaptchaToken } from "@/lib/security/verifyRecaptcha";
 
 const schema = z.object({
   recaptchaToken: z.string().min(1),
@@ -59,6 +60,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    const token = typeof body?.recaptchaToken === "string" ? body.recaptchaToken.trim() : "";
+    if (!token) {
+      return NextResponse.json({ success: false, error: "Token missing" }, { status: 400 });
+    }
+
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
@@ -76,9 +82,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Listing rate limit exceeded (10/hour)." }, { status: 429 });
     }
 
-    const recaptcha = await verifyRecaptcha(payload.recaptchaToken, ip);
+    const recaptcha = await verifyRecaptchaToken(token);
     if (!recaptcha) {
-      return NextResponse.json({ error: "reCAPTCHA verification failed." }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "reCAPTCHA verification failed" },
+        { status: 401 }
+      );
     }
 
     if (hasSuspiciousKeyword(`${payload.seoTitle} ${payload.make} ${payload.model}`)) {

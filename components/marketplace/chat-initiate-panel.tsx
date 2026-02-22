@@ -10,13 +10,17 @@ export function ChatInitiatePanel({ listings }: { listings: Listing[] }) {
   const [token, setToken] = useState("");
 
   async function initiateChat() {
-    const response = await fetch("/api/chat/initiate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ listingId, message, recaptchaToken: token }),
-    });
-    const payload = (await response.json()) as { message?: string; error?: string };
-    alert(payload.message ?? payload.error ?? "Done");
+    try {
+      const response = await fetch("/api/chat/initiate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listingId, message, recaptchaToken: token }),
+      });
+      const payload = (await response.json()) as { message?: string; error?: string };
+      alert(payload.message ?? payload.error ?? "Done");
+    } catch {
+      alert("Request failed. Please try again.");
+    }
   }
 
   return (

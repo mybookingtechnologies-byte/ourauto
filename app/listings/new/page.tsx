@@ -35,13 +35,17 @@ export default function NewListingPage() {
   }, [parsed.km, parsed.price, parsed.year]);
 
   async function parseMessage() {
-    const response = await fetch("/api/parser", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message }),
-    });
-    const payload = (await response.json()) as { parsed: SmartParseResult };
-    setParsed(payload.parsed);
+    try {
+      const response = await fetch("/api/parser", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+      });
+      const payload = (await response.json()) as { parsed: SmartParseResult };
+      setParsed(payload.parsed);
+    } catch {
+      setOcrStatus("Parser request failed.");
+    }
   }
 
   async function runOcrCheck() {
@@ -52,40 +56,49 @@ export default function NewListingPage() {
 
     const formData = new FormData();
     formData.set("image", imageFile);
+    formData.set("recaptchaToken", recaptchaToken);
 
-    const response = await fetch("/api/ocr-check", {
-      method: "POST",
-      body: formData,
-    });
+    try {
+      const response = await fetch("/api/ocr-check", {
+        method: "POST",
+        body: formData,
+      });
 
-    if (!response.ok) {
-      const data = (await response.json()) as { error: string };
-      setOcrStatus(data.error);
-      return;
+      if (!response.ok) {
+        const data = (await response.json()) as { error: string };
+        setOcrStatus(data.error);
+        return;
+      }
+
+      const data = (await response.json()) as { message: string; imageHash?: string };
+      if (data.imageHash) setImageHash(data.imageHash);
+      setOcrStatus(data.message);
+    } catch {
+      setOcrStatus("OCR check failed.");
     }
-
-    const data = (await response.json()) as { message: string; imageHash?: string };
-    if (data.imageHash) setImageHash(data.imageHash);
-    setOcrStatus(data.message);
   }
 
   async function submitListing() {
-    const response = await fetch("/api/listings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...parsed,
-        recaptchaToken,
-        mediaUrls: [],
-        model: "Unknown Model",
-        fuelType: "Petrol",
-        ownerType: "1st",
-        imageHashes: imageHash ? [imageHash] : [],
-      }),
-    });
+    try {
+      const response = await fetch("/api/listings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...parsed,
+          recaptchaToken,
+          mediaUrls: [],
+          model: "Unknown Model",
+          fuelType: "Petrol",
+          ownerType: "1st",
+          imageHashes: imageHash ? [imageHash] : [],
+        }),
+      });
 
-    const data = (await response.json()) as { message?: string; error?: string };
-    alert(data.message ?? data.error ?? "Done");
+      const data = (await response.json()) as { message?: string; error?: string };
+      alert(data.message ?? data.error ?? "Done");
+    } catch {
+      alert("Request failed. Please try again.");
+    }
   }
 
   return (

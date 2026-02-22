@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { logEvent } from "@/lib/monitoring/logger";
-import { verifyRecaptcha } from "@/lib/security/filters";
+import { verifyRecaptchaToken } from "@/lib/security/verifyRecaptcha";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -14,19 +14,27 @@ const schema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const token = typeof body?.recaptchaToken === "string" ? body.recaptchaToken.trim() : "";
+    if (!token) {
+      return NextResponse.json({ success: false, error: "Token missing" }, { status: 400 });
+    }
+
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
     }
 
     const ip = request.headers.get("x-forwarded-for") ?? "unknown";
-    const captchaValid = await verifyRecaptcha(parsed.data.recaptchaToken, ip);
+    const captchaValid = await verifyRecaptchaToken(token);
     if (!captchaValid) {
       void logEvent("WARN", "AUTH_FAILURE", "Signup blocked by reCAPTCHA validation", {
         ip,
         email: parsed.data.email,
       });
-      return NextResponse.json({ error: "reCAPTCHA verification failed." }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "reCAPTCHA verification failed" },
+        { status: 401 }
+      );
     }
 
     const supabase = await createSupabaseServerClient();

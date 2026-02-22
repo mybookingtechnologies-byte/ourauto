@@ -9,13 +9,17 @@ export default function SignupPage() {
   const [token, setToken] = useState("");
 
   async function signup() {
-    const response = await fetch("/api/auth/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, recaptchaToken: token }),
-    });
-    const payload = (await response.json()) as { message?: string; error?: string };
-    alert(payload.message ?? payload.error ?? "Done");
+    try {
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, recaptchaToken: token }),
+      });
+      const payload = (await response.json()) as { message?: string; error?: string };
+      alert(payload.message ?? payload.error ?? "Done");
+    } catch {
+      alert("Request failed. Please try again.");
+    }
   }
 
   return (

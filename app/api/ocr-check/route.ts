@@ -4,6 +4,7 @@ import { getServerEnv } from "@/lib/env";
 import { logEvent } from "@/lib/monitoring/logger";
 import { hashBinary } from "@/lib/security/filters";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { verifyRecaptchaToken } from "@/lib/security/verifyRecaptcha";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,6 +14,20 @@ export async function POST(request: NextRequest) {
     }
 
     const form = await request.formData();
+    const tokenValue = form.get("recaptchaToken");
+    const token = typeof tokenValue === "string" ? tokenValue.trim() : "";
+    if (!token) {
+      return NextResponse.json({ success: false, error: "Token missing" }, { status: 400 });
+    }
+
+    const recaptcha = await verifyRecaptchaToken(token);
+    if (!recaptcha) {
+      return NextResponse.json(
+        { success: false, error: "reCAPTCHA verification failed" },
+        { status: 401 }
+      );
+    }
+
     const image = form.get("image");
 
     if (!(image instanceof File)) {

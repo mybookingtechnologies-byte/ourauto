@@ -1,7 +1,7 @@
 "use client";
 
 import Script from "next/script";
-import { useEffect, useId, useMemo, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 declare global {
   interface Window {
@@ -12,56 +12,108 @@ declare global {
           sitekey: string;
           callback: (token: string) => void;
           "expired-callback"?: () => void;
-          theme?: "light" | "dark";
         }
       ) => number;
-      reset: (widgetId?: number) => void;
+      reset?: (widgetId?: number) => void;
     };
   }
 }
 
 export function RecaptchaWidget({
+  siteKey,
   onToken,
-  theme = "light",
 }: {
+  siteKey?: string;
   onToken: (token: string) => void;
-  theme?: "light" | "dark";
 }) {
-  const id = useId().replace(/:/g, "_");
-  const elementId = `recaptcha_${id}`;
-  const widgetRef = useRef<number | null>(null);
-  const siteKey = useMemo(() => process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ?? "", []);
+  const widgetRef = useRef<HTMLDivElement | null>(null);
+  const widgetIdRef = useRef<number | null>(null);
+  const [scriptLoaded, setScriptLoaded] = useState(false);
+  const resolvedSiteKey = siteKey ?? process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ?? "";
 
   useEffect(() => {
-    if (!siteKey) {
-      onToken("");
-      return;
-    }
-
-    const interval = setInterval(() => {
-      if (!window.grecaptcha || widgetRef.current !== null) {
+    try {
+      if (!scriptLoaded) {
         return;
       }
-      widgetRef.current = window.grecaptcha.render(elementId, {
-        sitekey: siteKey,
-        callback: onToken,
-        "expired-callback": () => onToken(""),
-        theme,
-      });
-    }, 150);
+      if (!resolvedSiteKey) {
+        return;
+      }
+      if (typeof window === "undefined") {
+        return;
+      }
+      if (!widgetRef.current) {
+        return;
+      }
+      if (widgetIdRef.current !== null) {
+        return;
+      }
+      const grecaptcha = window.grecaptcha;
+      if (!grecaptcha) {
+        return;
+      }
+      if (typeof grecaptcha.render !== "function") {
+        return;
+      }
 
+      widgetIdRef.current = grecaptcha.render(widgetRef.current, {
+        sitekey: resolvedSiteKey,
+        callback: (token: string) => {
+          onToken(token);
+        },
+        "expired-callback": () => {
+          onToken("");
+        },
+      });
+    } catch {
+      return;
+    }
+  }, [onToken, resolvedSiteKey, scriptLoaded]);
+
+  useEffect(() => {
     return () => {
-      clearInterval(interval);
-      if (window.grecaptcha && widgetRef.current !== null) {
-        window.grecaptcha.reset(widgetRef.current);
+      try {
+        if (typeof window === "undefined") {
+          return;
+        }
+        const grecaptcha = window.grecaptcha;
+        if (!grecaptcha) {
+          return;
+        }
+        if (typeof grecaptcha.reset !== "function") {
+          return;
+        }
+        if (widgetIdRef.current === null) {
+          return;
+        }
+        grecaptcha.reset(widgetIdRef.current);
+      } catch {
+        return;
       }
     };
-  }, [elementId, onToken, siteKey, theme]);
+  }, []);
 
   return (
     <>
-      <Script src="https://www.google.com/recaptcha/api.js?render=explicit" strategy="afterInteractive" />
-      <div id={elementId} />
+      <Script
+        src="https://www.google.com/recaptcha/api.js?render=explicit"
+        strategy="afterInteractive"
+        onLoad={() => {
+          try {
+            setScriptLoaded(true);
+          } catch {
+            return;
+          }
+        }}
+        onError={() => {
+          try {
+            setScriptLoaded(false);
+          } catch {
+            return;
+          }
+        }}
+      />
+      <div ref={widgetRef} />
     </>
   );
 }
