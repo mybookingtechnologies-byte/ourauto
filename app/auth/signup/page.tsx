@@ -70,13 +70,29 @@ export default function SignupPage() {
       />
 
       <button
-        type="button"
-        className="cta"
-        onClick={signup}
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? "Creating..." : "Create Account"}
-      </button>
+          type="button"
+          onClick={signup}
+          disabled={isSubmitting}
+          className="
+            inline-flex
+            items-center
+            justify-center
+            rounded-xl
+            px-6
+            py-3
+            font-semibold
+            transition
+            bg-yellow-400
+            text-black
+            hover:bg-yellow-300
+            active:scale-95
+            disabled:opacity-60
+            disabled:cursor-not-allowed
+            shadow-sm
+          "
+        >
+          {isSubmitting ? "Creating..." : "Create Account"}
+        </button>
     </main>
   );
 }
