@@ -73,13 +73,9 @@ export default function SignupPage() {
         type="button"
         className="cta"
         onClick={signup}
-        disabled={!isReady || isSubmitting}
+        disabled={isSubmitting}
       >
-        {!isReady
-          ? "Loading..."
-          : isSubmitting
-          ? "Creating..."
-          : "Create Account"}
+        {isSubmitting ? "Creating..." : "Create Account"}
       </button>
     </main>
   );
