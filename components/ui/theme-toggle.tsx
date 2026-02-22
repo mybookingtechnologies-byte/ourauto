@@ -1,27 +1,10 @@
+
 "use client";
 
-import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return (
-      <button
-        type="button"
-        aria-hidden="true"
-        className="h-9 w-9 rounded-full border border-black/10 opacity-0"
-        tabIndex={-1}
-      />
-    );
-  }
-
   const isDark = resolvedTheme === "dark";
 
   return (
