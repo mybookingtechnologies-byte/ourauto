@@ -1,3 +1,4 @@
+import RecaptchaProvider from "@/components/providers/recaptcha-provider";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/ui/theme-provider";
@@ -38,14 +39,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} bg-background text-foreground antialiased`}
       >
-            <ThemeProvider>
-              <GoogleReCaptchaProvider
-                reCaptchaKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
-                scriptProps={{ async: true, defer: true }}
-              >
-                {children}
-              </GoogleReCaptchaProvider>
-            </ThemeProvider>
+        <ThemeProvider>
+          <RecaptchaProvider>
+            {children}
+          </RecaptchaProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
