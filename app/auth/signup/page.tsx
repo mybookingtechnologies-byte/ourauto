@@ -6,16 +6,13 @@ import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isReady, setIsReady] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { executeRecaptcha } = useGoogleReCaptcha();
 
   // Wait until recaptcha becomes available
   useEffect(() => {
-    if (executeRecaptcha) {
-      setIsReady(true);
-    }
+    // ...existing code...
   }, [executeRecaptcha]);
 
   async function signup() {
