@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { RecaptchaWidget } from "@/components/security/recaptcha-widget";
 
@@ -42,6 +43,12 @@ export default function LoginPage() {
       <button type="button" className="cta" onClick={login}>
         Login
       </button>
+      <p className="pt-1 text-center text-xs text-neutral-500 opacity-90 dark:text-neutral-400">
+        Don&apos;t have an account?{" "}
+        <Link href="/auth/signup" className="transition hover:text-yellow-400 hover:underline">
+          Sign up
+        </Link>
+      </p>
     </main>
   );
 }

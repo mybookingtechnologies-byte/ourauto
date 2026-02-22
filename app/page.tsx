@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MarketplaceClient } from "@/components/marketplace/marketplace-client";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { getListings } from "@/lib/data/listings";
 import { getRequestLocation } from "@/lib/location";
 
@@ -23,11 +24,12 @@ export default async function Home() {
             Location detected: {location.city}, {location.state}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
           <Link href="/listings/new" className="cta">
             Add Listing
           </Link>
-          <Link href="/dashboard" className="rounded-xl border px-4 py-2">
+          <Link href="/dashboard" className="rounded-xl border border-black/10 px-4 py-2 dark:border-white/15">
             Dashboard
           </Link>
         </div>
