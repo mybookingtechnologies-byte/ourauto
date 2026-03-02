@@ -1,0 +1,177 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  DEALER
+  ADMIN
+}
+
+enum UserStatus {
+  PENDING
+  APPROVED
+  SUSPENDED
+}
+
+enum CarStatus {
+  ACTIVE
+  SOLD
+  DRAFT
+}
+
+enum FuelType {
+  PETROL
+  DIESEL
+  CNG
+  ELECTRIC
+  HYBRID
+  OTHER
+}
+
+enum InquiryStatus {
+  OPEN
+  CLOSED
+}
+
+model User {
+  id                String        @id @default(uuid())
+  dealerName        String?
+  businessName      String?
+  mobile            String        @unique
+  email             String        @unique
+  passwordHash      String
+  role              UserRole      @default(DEALER)
+  status            UserStatus    @default(PENDING)
+  city              String?
+  boostRemaining    Int           @default(0)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  cars              Car[]
+  subscriptions     Subscription[]
+  wallet            Wallet?
+  notifications     Notification[]
+  sentMessages      ChatMessage[] @relation("SenderMessages")
+  roomAsDealerOne   ChatRoom[]    @relation("DealerOne")
+  roomAsDealerTwo   ChatRoom[]    @relation("DealerTwo")
+}
+
+model Car {
+  id          String     @id @default(uuid())
+  dealerId    String
+  dealer      User       @relation(fields: [dealerId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  brand       String
+  model       String
+  year        Int
+  km          Int
+  fuel        FuelType
+  ownerCount  Int?
+  price       Decimal    @db.Decimal(12, 2)
+  city        String
+  plateNumber String?
+  isUrgent    Boolean    @default(false)
+  isFeatured  Boolean    @default(false)
+  status      CarStatus  @default(ACTIVE)
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  media       CarMedia[]
+  inquiries   Inquiry[]
+
+  @@index([dealerId])
+  @@index([brand])
+  @@index([isUrgent])
+  @@unique([dealerId, plateNumber])
+}
+
+model CarMedia {
+  id        String   @id @default(uuid())
+  carId      String
+  car       Car      @relation(fields: [carId], references: [id], onDelete: Cascade)
+  url       String
+  order     Int      @default(0)
+  isMain    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([carId])
+}
+
+model Subscription {
+  id          String   @id @default(uuid())
+  userId       String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planName    String
+  amount      Decimal  @db.Decimal(10, 2)
+  startsAt    DateTime
+  expiresAt   DateTime
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Wallet {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance   Decimal  @db.Decimal(12, 2) @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Inquiry {
+  id        String        @id @default(uuid())
+  carId      String
+  car       Car           @relation(fields: [carId], references: [id], onDelete: Cascade)
+  name      String
+  mobile    String
+  message   String
+  status    InquiryStatus @default(OPEN)
+  createdAt DateTime      @default(now())
+
+  @@index([carId])
+}
+
+model ChatRoom {
+  id          String        @id @default(uuid())
+  dealerOneId String
+  dealerTwoId String
+  createdAt   DateTime      @default(now())
+  messages    ChatMessage[]
+  dealerOne   User          @relation("DealerOne", fields: [dealerOneId], references: [id], onDelete: Cascade)
+  dealerTwo   User          @relation("DealerTwo", fields: [dealerTwoId], references: [id], onDelete: Cascade)
+
+  @@unique([dealerOneId, dealerTwoId])
+  @@index([dealerOneId])
+  @@index([dealerTwoId])
+}
+
+model ChatMessage {
+  id         String   @id @default(uuid())
+  roomId      String
+  room       ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  senderId    String
+  sender     User     @relation("SenderMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  message    String
+  createdAt  DateTime @default(now())
+
+  @@index([roomId])
+  @@index([senderId])
+}
