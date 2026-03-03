@@ -105,6 +105,7 @@ model Car {
   @@index([dealerId])
   @@index([brand])
   @@index([isUrgent])
+  // Hot and Future promotions must never be active together for the same car.
   @@index([isHotDeal, hotDealUntil])
   @@index([isFutureAd, futureAdUntil])
   @@index([status, isActive, createdAt(sort: Desc)])

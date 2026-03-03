@@ -1,7 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
+import { env } from "@/lib/env";
 
-if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET is required");
-const SECRET = process.env.JWT_SECRET;
+const SECRET = env.JWT_SECRET;
 const encoder = new TextEncoder();
 
 export type AuthTokenPayload = {

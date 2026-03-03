@@ -81,7 +81,9 @@ export const POST = withApiHandler(async (request: NextRequest): Promise<NextRes
           },
         });
       }
-    } catch {}
+    } catch (error) {
+      console.error("Referral reward processing failed:", error);
+    }
   }
 
   return apiSuccess({});

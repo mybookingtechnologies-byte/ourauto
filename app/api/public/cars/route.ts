@@ -35,8 +35,25 @@ export const GET = withApiHandler(async (request: NextRequest): Promise<NextResp
         futureAdUntil: { gt: now },
       },
       {
-        isHotDeal: false,
-        isFutureAd: false,
+        NOT: {
+          OR: [{ isHotDeal: true }, { isFutureAd: true }],
+        },
+      },
+      {
+        isHotDeal: true,
+        hotDealUntil: { lte: now },
+      },
+      {
+        isHotDeal: true,
+        hotDealUntil: null,
+      },
+      {
+        isFutureAd: true,
+        futureAdUntil: { lte: now },
+      },
+      {
+        isFutureAd: true,
+        futureAdUntil: null,
       },
     ],
   };

@@ -1,19 +1,13 @@
 import { Redis } from "@upstash/redis";
 import { NextResponse } from "next/server";
+import { env } from "@/lib/env";
 
-const redis =
-  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
-    ? new Redis({
-        url: process.env.UPSTASH_REDIS_REST_URL,
-        token: process.env.UPSTASH_REDIS_REST_TOKEN,
-      })
-    : null;
+const redis = new Redis({
+  url: env.UPSTASH_REDIS_REST_URL,
+  token: env.UPSTASH_REDIS_REST_TOKEN,
+});
 
 export async function checkRateLimit(key: string, limit: number, windowMs: number): Promise<boolean> {
-  if (!redis) {
-    return true;
-  }
-
   try {
     const now = Date.now();
     const redisKey = key;

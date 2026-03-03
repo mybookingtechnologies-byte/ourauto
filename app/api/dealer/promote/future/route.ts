@@ -32,6 +32,15 @@ export const POST = withApiHandler(async (request: NextRequest): Promise<NextRes
       dealerId: true,
       status: true,
       isActive: true,
+      isHotDeal: true,
+      hotDealUntil: true,
+      isFutureAd: true,
+      futureAdUntil: true,
+      media: {
+        select: {
+          id: true,
+        },
+      },
     },
   });
 
@@ -45,6 +54,18 @@ export const POST = withApiHandler(async (request: NextRequest): Promise<NextRes
 
   if (existing.status !== "ACTIVE" || !existing.isActive) {
     return apiError("Promotion available only for active cars", 400);
+  }
+
+  if (existing.media.length === 0) {
+    return apiError("PHOTO_REQUIRED_FOR_PROMOTION", 400);
+  }
+
+  const now = new Date();
+  const hasActiveHotDeal = existing.isHotDeal && !!existing.hotDealUntil && existing.hotDealUntil > now;
+  const hasActiveFutureAd = existing.isFutureAd && !!existing.futureAdUntil && existing.futureAdUntil > now;
+
+  if (hasActiveHotDeal || hasActiveFutureAd) {
+    return apiError("CAR_ALREADY_HAS_ACTIVE_PROMOTION", 400);
   }
 
   try {

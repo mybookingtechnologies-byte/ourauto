@@ -14,29 +14,6 @@ export const GET = withApiHandler(async (_request: NextRequest): Promise<NextRes
   }
 
   const now = new Date();
-  await Promise.all([
-    prisma.car.updateMany({
-      where: {
-        dealerId: auth.userId,
-        isHotDeal: true,
-        hotDealUntil: { lte: now },
-      },
-      data: {
-        isHotDeal: false,
-      },
-    }),
-    prisma.car.updateMany({
-      where: {
-        dealerId: auth.userId,
-        isFutureAd: true,
-        futureAdUntil: { lte: now },
-      },
-      data: {
-        isFutureAd: false,
-      },
-    }),
-  ]);
-
   const cars = await prisma.car.findMany({
     where: { dealerId: auth.userId },
     orderBy: [{ isHotDeal: "desc" }, { isFutureAd: "desc" }, { createdAt: "desc" }],
@@ -147,7 +124,9 @@ export const POST = withApiHandler(async (request: NextRequest): Promise<NextRes
         },
       });
     }
-  } catch {}
+  } catch (error) {
+    console.error("Post publish milestone failed:", error);
+  }
 
   return apiSuccess({ car: created });
 });
