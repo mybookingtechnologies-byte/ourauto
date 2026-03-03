@@ -21,8 +21,8 @@ export function InquiryModal({ carId, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4">
-      <Card className="w-full max-w-md bg-bgPrimary">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm">
+      <Card className="w-full max-w-md bg-white dark:bg-zinc-900">
         <h3 className="mb-4 text-lg font-semibold">Send Inquiry</h3>
         <div className="space-y-3">
           <Input placeholder="Name" value={form.name} onChange={(event: ChangeEvent<HTMLInputElement>) => setForm({ ...form, name: event.target.value })} />

@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server";
+import { apiSuccess, withApiHandler } from "@/lib/api";
 import { requireAdmin } from "@/lib/apiAuth";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rateLimit";
 
-export async function GET(): Promise<NextResponse> {
+export const GET = withApiHandler(async (): Promise<NextResponse> => {
   const admin = await requireAdmin();
   if (admin instanceof NextResponse) {
     return admin;
+  }
+
+  const allowed = await checkRateLimit(`admin:${admin.userId}`, 30, 60 * 60 * 1000);
+  if (!allowed) {
+    return rateLimitExceededResponse();
   }
 
   const dealers = await prisma.user.findMany({
@@ -23,5 +30,5 @@ export async function GET(): Promise<NextResponse> {
     },
   });
 
-  return NextResponse.json({ dealers });
-}
+  return apiSuccess({ dealers });
+});

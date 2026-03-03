@@ -14,11 +14,12 @@ export default function SignupPage(): JSX.Element {
     mobile: "",
     email: "",
     password: "",
+    referralCode: "",
   });
   const [loading, setLoading] = useState(false);
 
   return (
-    <main className="grid min-h-screen place-items-center bg-bgPrimary px-6 py-12">
+    <main className="grid min-h-screen place-items-center bg-zinc-50 px-6 py-12 dark:bg-zinc-950">
       <Card className="w-full max-w-md">
         <h1 className="mb-4 text-2xl font-bold">Dealer Signup</h1>
         <div className="space-y-3">
@@ -27,6 +28,11 @@ export default function SignupPage(): JSX.Element {
           <Input placeholder="Mobile" value={form.mobile} onChange={(event) => setForm({ ...form, mobile: event.target.value })} />
           <Input placeholder="Email" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
           <Input placeholder="Password" type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} />
+          <Input
+            placeholder="Referral Code (optional)"
+            value={form.referralCode}
+            onChange={(event) => setForm({ ...form, referralCode: event.target.value.toUpperCase() })}
+          />
           <Button
             className="w-full"
             onClick={async () => {

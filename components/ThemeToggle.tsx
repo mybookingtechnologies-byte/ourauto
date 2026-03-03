@@ -8,12 +8,15 @@ export default function ThemeToggle() {
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const shouldUseDark = savedTheme !== "light";
 
-    if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
+    if (shouldUseDark) {
       document.documentElement.classList.add("dark");
-      setIsDark(true);
+    } else {
+      document.documentElement.classList.remove("dark");
     }
+
+    setIsDark(shouldUseDark);
 
     setMounted(true);
   }, []);
@@ -34,10 +37,10 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="relative w-14 h-8 flex items-center bg-gray-200 dark:bg-gray-700 rounded-full p-1 transition-all duration-300"
+      className="relative flex h-8 w-14 items-center rounded-full bg-zinc-200 p-1 transition-all duration-300 dark:bg-zinc-700"
     >
       <div
-        className={`w-6 h-6 rounded-full flex items-center justify-center bg-white dark:bg-black shadow-md transform transition-all duration-300 ${
+        className={`flex h-6 w-6 transform items-center justify-center rounded-full bg-white shadow-md transition-all duration-300 dark:bg-zinc-900 ${
           isDark ? "translate-x-6" : "translate-x-0"
         }`}
       >

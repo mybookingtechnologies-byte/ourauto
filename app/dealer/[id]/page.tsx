@@ -1,10 +1,33 @@
+import type { Metadata } from "next";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { DealerCarGrid } from "@/components/forms/dealer-car-grid";
 import { Header } from "@/components/layout/header";
+import { isFutureAdActive, isHotDealActive } from "@/lib/promotion";
 import { prisma } from "@/lib/prisma";
 
 interface Props {
   params: { id: string };
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const dealer = await prisma.user.findUnique({
+    where: { id: params.id },
+    select: { dealerName: true, city: true, role: true, status: true },
+  });
+
+  if (!dealer || dealer.role !== "DEALER" || dealer.status !== "APPROVED") {
+    return {
+      title: "Dealer not found | OurAuto",
+      description: "The requested dealer profile is unavailable.",
+    };
+  }
+
+  const dealerName = dealer.dealerName || "Dealer";
+  return {
+    title: `${dealerName} | OurAuto Dealer Profile`,
+    description: dealer.city ? `Browse verified listings from ${dealerName} in ${dealer.city}.` : `Browse verified listings from ${dealerName}.`,
+  };
 }
 
 function getInitials(name: string): string {
@@ -30,7 +53,7 @@ export default async function DealerPublicProfilePage({ params }: Props): Promis
       status: true,
       cars: {
         where: { isActive: true, status: "ACTIVE" },
-        orderBy: { createdAt: "desc" },
+        orderBy: [{ isHotDeal: "desc" }, { isFutureAd: "desc" }, { createdAt: "desc" }],
         include: {
           media: {
             orderBy: { order: "asc" },
@@ -47,6 +70,7 @@ export default async function DealerPublicProfilePage({ params }: Props): Promis
 
   const dealerName = dealer.dealerName || "Dealer";
   const initials = getInitials(dealerName);
+  const now = new Date();
   const cars = dealer.cars.map((car) => ({
     id: car.id,
     title: car.title,
@@ -58,6 +82,8 @@ export default async function DealerPublicProfilePage({ params }: Props): Promis
     city: car.city,
     price: car.price.toString(),
     isUrgent: car.isUrgent,
+    isHotDeal: isHotDealActive(car, now),
+    isFutureAd: isFutureAdActive(car, now),
     verifiedDealer: true,
     media: car.media,
   }));
@@ -68,16 +94,16 @@ export default async function DealerPublicProfilePage({ params }: Props): Promis
       <section className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6">
         <div className="relative">
           {dealer.coverImage ? (
-            <img src={dealer.coverImage} alt={`${dealerName} cover`} className="h-[250px] w-full rounded-xl object-cover" />
+            <Image src={dealer.coverImage} alt={`${dealerName} cover`} width={1200} height={250} className="h-[250px] w-full rounded-xl object-cover" />
           ) : (
             <div className="h-[250px] w-full rounded-xl bg-gradient-to-r from-zinc-900 to-zinc-700" />
           )}
 
-          <div className="absolute -bottom-16 left-6 h-[120px] w-[120px] overflow-hidden rounded-full border-4 border-black bg-zinc-800">
+          <div className="absolute -bottom-16 left-6 h-[120px] w-[120px] overflow-hidden rounded-full border-4 border-zinc-200 bg-zinc-800 dark:border-zinc-800">
             {dealer.profileImage ? (
-              <img src={dealer.profileImage} alt={`${dealerName} profile`} className="h-full w-full object-cover" />
+              <Image src={dealer.profileImage} alt={`${dealerName} profile`} width={120} height={120} className="h-full w-full object-cover" />
             ) : (
-              <div className="grid h-full w-full place-items-center text-3xl font-bold text-white">{initials}</div>
+              <div className="grid h-full w-full place-items-center text-3xl font-bold text-zinc-100">{initials}</div>
             )}
           </div>
         </div>

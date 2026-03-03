@@ -84,7 +84,7 @@ export function PublicListings(): JSX.Element {
         {loading && cars.length === 0 ? (
           <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 6 }).map((_, index) => (
-              <div key={index} className="rounded-2xl bg-bgSecondary p-4 shadow-lg">
+              <div key={index} className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
                 <div className="aspect-video animate-pulse rounded-xl bg-zinc-300 dark:bg-zinc-800" />
                 <div className="mt-4 h-4 animate-pulse rounded bg-zinc-300 dark:bg-zinc-800" />
                 <div className="mt-2 h-4 w-2/3 animate-pulse rounded bg-zinc-300 dark:bg-zinc-800" />
@@ -95,7 +95,7 @@ export function PublicListings(): JSX.Element {
         ) : null}
 
         {!loading && cars.length === 0 ? (
-          <div className="mt-8 grid min-h-[240px] place-items-center rounded-2xl border border-dashed border-zinc-300 bg-bgSecondary/40 p-6 text-center dark:border-zinc-700">
+          <div className="mt-8 grid min-h-[240px] place-items-center rounded-2xl border border-dashed border-zinc-300 bg-zinc-100 p-6 text-center dark:border-zinc-700 dark:bg-zinc-800">
             <p className="text-base font-medium">No Cars Found</p>
           </div>
         ) : null}

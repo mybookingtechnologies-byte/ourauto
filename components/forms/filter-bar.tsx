@@ -20,7 +20,7 @@ interface Props {
 
 export function FilterBar({ filters, onChange }: Props) {
   return (
-    <div className="grid gap-3 rounded-2xl bg-bgSecondary p-6 shadow-lg md:grid-cols-6">
+    <div className="grid gap-3 rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg dark:border-zinc-800 dark:bg-zinc-900 md:grid-cols-6">
       <Input
         placeholder="Search"
         value={filters.q}

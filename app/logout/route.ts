@@ -5,7 +5,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   response.cookies.set("ourauto_token", "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "strict",
     expires: new Date(0),
     path: "/",
   });

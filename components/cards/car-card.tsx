@@ -17,6 +17,8 @@ export type PublicCar = {
   city: string;
   price: string;
   isUrgent: boolean;
+  isHotDeal: boolean;
+  isFutureAd: boolean;
   verifiedDealer: boolean;
   media: Array<{ id: string; url: string }>;
 };
@@ -34,12 +36,14 @@ export function CarCard({ car, onInquire }: Props) {
   );
 
   return (
-    <Card>
-      <div className="relative aspect-video overflow-hidden rounded-2xl bg-black">
+    <Card className={car.isHotDeal ? "border-red-300 dark:border-red-700" : undefined}>
+      <div className="relative aspect-video overflow-hidden rounded-2xl bg-zinc-100 dark:bg-zinc-800">
         <img src={images[activeIndex]?.url} alt={car.title} className="h-full w-full object-cover" />
         <div className="absolute left-2 top-2 flex gap-2">
           {car.isUrgent ? <Badge>Urgent</Badge> : null}
-          {car.verifiedDealer ? <Badge className="bg-zinc-900 text-white dark:bg-zinc-100 dark:text-black">Verified</Badge> : null}
+          {car.isHotDeal ? <Badge className="bg-red-600 text-white">🔥 Hot Deal</Badge> : null}
+          {car.isFutureAd ? <Badge className="bg-blue-600 text-white">🚀 Future Ad</Badge> : null}
+          {car.verifiedDealer ? <Badge className="bg-zinc-900 text-zinc-100 dark:bg-zinc-100 dark:text-zinc-900">Verified</Badge> : null}
         </div>
       </div>
       <div className="mt-4 flex items-start justify-between gap-3">
@@ -60,7 +64,7 @@ export function CarCard({ car, onInquire }: Props) {
           {images.slice(0, 5).map((image, index) => (
             <button
               key={image.id}
-              className={`h-2 w-6 rounded-full ${activeIndex === index ? "bg-accent" : "bg-zinc-300 dark:bg-zinc-700"}`}
+              className={`h-2 w-6 rounded-full ${activeIndex === index ? "bg-yellow-500" : "bg-zinc-300 dark:bg-zinc-700"}`}
               onClick={() => setActiveIndex(index)}
               aria-label={`Image ${index + 1}`}
             />

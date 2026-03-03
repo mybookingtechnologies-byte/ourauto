@@ -109,8 +109,8 @@ export function Header(): JSX.Element {
           ];
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 dark:border-gray-800 dark:bg-black sm:px-6">
-      <Link href="/" className="text-xl font-semibold text-black dark:text-white">
+    <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-zinc-200 bg-white px-4 dark:border-zinc-800 dark:bg-zinc-950 sm:px-6">
+      <Link href="/" className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
         Marketplace
       </Link>
 
@@ -122,12 +122,12 @@ export function Header(): JSX.Element {
             type="button"
             aria-label="Open profile menu"
             onClick={() => setIsOpen((prev) => !prev)}
-            className="h-10 w-10 overflow-hidden rounded-full border border-gray-300 transition hover:border-gray-500 dark:border-gray-700 dark:hover:border-gray-500"
+            className="h-10 w-10 overflow-hidden rounded-full border border-zinc-300 transition hover:border-zinc-500 dark:border-zinc-700 dark:hover:border-zinc-500"
           >
             {avatarUrl ? (
               <img src={avatarUrl} alt="Profile" className="h-full w-full object-cover" />
             ) : (
-              <span className="grid h-full w-full place-items-center bg-zinc-900 text-sm font-semibold text-white">{initials}</span>
+              <span className="grid h-full w-full place-items-center bg-zinc-900 text-sm font-semibold text-zinc-100">{initials}</span>
             )}
           </button>
         ) : (
@@ -135,32 +135,32 @@ export function Header(): JSX.Element {
             type="button"
             aria-label="Open menu"
             onClick={() => setIsOpen((prev) => !prev)}
-            className="flex items-center justify-center rounded-lg p-2 transition hover:bg-gray-200 dark:hover:bg-gray-800"
+            className="flex items-center justify-center rounded-lg p-2 transition hover:bg-zinc-200 dark:hover:bg-zinc-800"
           >
-            <Menu className="h-5 w-5 text-black dark:text-white" />
+            <Menu className="h-5 w-5 text-zinc-900 dark:text-zinc-100" />
           </button>
         )}
 
         {isOpen ? (
-          <div className="animate-fade-in absolute right-0 top-12 w-56 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-800 dark:bg-black">
+          <div className="animate-fade-in absolute right-0 top-12 w-56 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
             {isLoggedIn ? (
               <>
                 <Link
                   href={role === "DEALER" && dealerId ? `/dealer/${dealerId}` : "/admin"}
                   onClick={handleItemClick}
-                  className="block px-4 py-2 text-sm text-black transition hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800"
+                  className="block px-4 py-2 text-sm text-zinc-900 transition hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800"
                 >
                   My Profile
                 </Link>
                 <Link
                   href={role === "DEALER" ? "/dealer/settings" : "/admin/settings"}
                   onClick={handleItemClick}
-                  className="block px-4 py-2 text-sm text-black transition hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800"
+                  className="block px-4 py-2 text-sm text-zinc-900 transition hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800"
                 >
                   Settings
                 </Link>
 
-              <div className="border-t border-gray-200 p-2 dark:border-gray-800">
+              <div className="border-t border-zinc-200 p-2 dark:border-zinc-800">
                 <Button
                   variant="secondary"
                   className="w-full"
@@ -184,8 +184,8 @@ export function Header(): JSX.Element {
                     onClick={handleItemClick}
                     className={`block px-4 py-2 text-sm transition ${
                       active
-                        ? "bg-accent/20 font-semibold text-black dark:text-white"
-                        : "text-black hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800"
+                        ? "bg-yellow-500/20 font-semibold text-zinc-900 dark:text-zinc-100"
+                        : "text-zinc-900 hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800"
                     }`}
                   >
                     {link.label}

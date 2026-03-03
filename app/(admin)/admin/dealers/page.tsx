@@ -45,10 +45,10 @@ export default function AdminDealersPage(): JSX.Element {
   return (
     <main className="mx-auto max-w-7xl px-6 py-12">
       <h1 className="mb-6 text-2xl font-bold">Dealer Management</h1>
-      <div className="overflow-x-auto rounded-2xl bg-bgSecondary p-2 shadow-lg">
+      <div className="overflow-x-auto rounded-2xl border border-zinc-200 bg-white p-2 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
         <table className="w-full min-w-[860px] text-left text-sm">
           <thead>
-            <tr className="border-b border-zinc-700/50 text-zinc-400">
+            <tr className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
               <th className="px-4 py-3 font-medium">Dealer Name</th>
               <th className="px-4 py-3 font-medium">Email</th>
               <th className="px-4 py-3 font-medium">Mobile</th>
@@ -59,7 +59,7 @@ export default function AdminDealersPage(): JSX.Element {
           </thead>
           <tbody>
             {dealers.map((dealer) => (
-              <tr key={dealer.id} className="border-b border-zinc-700/30 last:border-none">
+              <tr key={dealer.id} className="border-b border-zinc-200 last:border-none dark:border-zinc-800">
                 <td className="px-4 py-3">{dealer.businessName || dealer.dealerName || "-"}</td>
                 <td className="px-4 py-3">{dealer.email}</td>
                 <td className="px-4 py-3">{dealer.mobile}</td>

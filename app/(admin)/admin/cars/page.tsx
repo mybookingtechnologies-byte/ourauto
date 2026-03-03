@@ -31,7 +31,7 @@ export default function AdminCarsPage(): JSX.Element {
       <h1 className="mb-6 text-2xl font-bold">Car Moderation</h1>
       <div className="space-y-3">
         {cars.map((car) => (
-          <div key={car.id} className="flex items-center justify-between rounded-2xl bg-bgSecondary p-6 shadow-lg">
+          <div key={car.id} className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
             <div>
               <h2 className="font-semibold">{car.brand} {car.model}</h2>
               <p className="text-sm text-zinc-500">{car.city} • {car.dealer.businessName || car.dealer.dealerName}</p>

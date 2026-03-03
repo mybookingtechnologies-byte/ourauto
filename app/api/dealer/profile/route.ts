@@ -1,10 +1,12 @@
 import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
+import { writeAuditLog } from "@/lib/audit";
+import { apiError, apiSuccess, validateCsrf, withApiHandler } from "@/lib/api";
 import { requireDealer } from "@/lib/apiAuth";
 import { prisma } from "@/lib/prisma";
 import { dealerPasswordUpdateSchema, dealerProfileUpdateSchema } from "@/lib/validators";
 
-export async function GET(): Promise<NextResponse> {
+export const GET = withApiHandler(async (_request: NextRequest): Promise<NextResponse> => {
   const auth = await requireDealer();
   if (auth instanceof NextResponse) {
     return auth;
@@ -24,10 +26,15 @@ export async function GET(): Promise<NextResponse> {
       bio: true,
     },
   });
-  return NextResponse.json({ user });
-}
+  return apiSuccess({ user });
+});
 
-export async function PATCH(request: NextRequest): Promise<NextResponse> {
+export const PATCH = withApiHandler(async (request: NextRequest): Promise<NextResponse> => {
+  const csrfError = validateCsrf(request);
+  if (csrfError) {
+    return apiError(csrfError, 403);
+  }
+
   const auth = await requireDealer();
   if (auth instanceof NextResponse) {
     return auth;
@@ -39,20 +46,26 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
   if (passwordParsed.success) {
     const user = await prisma.user.findUnique({ where: { id: auth.userId } });
     if (!user) {
-      return NextResponse.json({ error: "Invalid password request" }, { status: 400 });
+      return apiError("Invalid password request", 400);
     }
     const valid = await bcrypt.compare(passwordParsed.data.currentPassword, user.passwordHash);
     if (!valid) {
-      return NextResponse.json({ error: "Invalid current password" }, { status: 400 });
+      return apiError("Invalid current password", 400);
     }
     const passwordHash = await bcrypt.hash(passwordParsed.data.newPassword, 10);
     await prisma.user.update({ where: { id: auth.userId }, data: { passwordHash } });
-    return NextResponse.json({ ok: true });
+    await writeAuditLog({
+      actorUserId: auth.userId,
+      action: "DEALER_CHANGE_PASSWORD",
+      targetType: "User",
+      targetId: auth.userId,
+    });
+    return apiSuccess({});
   }
 
   const profileParsed = dealerProfileUpdateSchema.safeParse(body);
   if (!profileParsed.success) {
-    return NextResponse.json({ error: "Invalid profile payload" }, { status: 400 });
+    return apiError("Invalid profile payload", 400);
   }
 
   await prisma.user.update({
@@ -67,5 +80,12 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
     },
   });
 
-  return NextResponse.json({ ok: true });
-}
+  await writeAuditLog({
+    actorUserId: auth.userId,
+    action: "DEALER_UPDATE_PROFILE",
+    targetType: "User",
+    targetId: auth.userId,
+  });
+
+  return apiSuccess({});
+});

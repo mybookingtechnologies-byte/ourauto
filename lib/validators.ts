@@ -12,6 +12,7 @@ export const signupSchema = z.object({
   mobile: z.string().regex(/^[0-9]{10}$/),
   email: z.string().email().transform((v) => v.toLowerCase().trim()),
   password: z.string().min(8),
+  referralCode: z.string().min(4).max(64).transform((v) => v.trim().toUpperCase()).optional(),
 });
 
 export const loginSchema = z.object({
@@ -99,11 +100,11 @@ export const dealerProfileUpdateSchema = z.object({
   city: z.string().min(2).transform(cleanString).optional(),
   profileImage: z
     .string()
-    .refine((value) => value.startsWith("/uploads/") || /^https?:\/\//i.test(value), "Invalid image URL")
+    .refine((value) => /^https:\/\/res\.cloudinary\.com\//i.test(value), "Invalid image URL")
     .optional(),
   coverImage: z
     .string()
-    .refine((value) => value.startsWith("/uploads/") || /^https?:\/\//i.test(value), "Invalid image URL")
+    .refine((value) => /^https:\/\/res\.cloudinary\.com\//i.test(value), "Invalid image URL")
     .optional(),
   bio: z.string().max(500).transform(cleanString).optional(),
 });
@@ -116,6 +117,35 @@ export const dealerPasswordUpdateSchema = z.object({
 export const adminSettingsUpdateSchema = z.object({
   maxImages: z.coerce.number().int().min(1).max(30).optional(),
   autoExpireDays: z.coerce.number().int().min(1).max(365).optional(),
+});
+
+export const dealerPromotionActivateSchema = z.object({
+  carId: z.string().uuid(),
+});
+
+export const dealerPackagePurchaseSchema = z.object({
+  packageId: z.string().uuid(),
+});
+
+export const adminPackageCreateSchema = z.object({
+  name: z.string().min(2).max(100).transform(cleanString),
+  type: z.enum(["HOT_DEAL", "FUTURE_AD"]),
+  credits: z.coerce.number().int().min(1),
+  price: z.coerce.number().int().min(0),
+  isActive: z.boolean().optional(),
+});
+
+export const adminPackageUpdateSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(2).max(100).transform(cleanString).optional(),
+  credits: z.coerce.number().int().min(1).optional(),
+  price: z.coerce.number().int().min(0).optional(),
+  isActive: z.boolean().optional(),
+});
+
+export const adminPlatformConfigSchema = z.object({
+  hotDealMilestone: z.coerce.number().int().min(1).optional(),
+  referralReward: z.coerce.number().int().min(1).optional(),
 });
 
 export function parseWhatsappDetails(input: string): Partial<z.infer<typeof createCarSchema>> {

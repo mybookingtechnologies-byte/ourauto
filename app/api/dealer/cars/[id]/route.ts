@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
+import { writeAuditLog } from "@/lib/audit";
+import { apiError, apiSuccess, validateCsrf, withApiHandler } from "@/lib/api";
 import { requireDealer } from "@/lib/apiAuth";
 import { prisma } from "@/lib/prisma";
 import { dealerCarPatchSchema } from "@/lib/validators";
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }): Promise<NextResponse> {
+export const PATCH = withApiHandler(async (request: NextRequest, { params }: { params?: Record<string, string> } = {}): Promise<NextResponse> => {
+  const csrfError = validateCsrf(request);
+  if (csrfError) {
+    return apiError(csrfError, 403);
+  }
+
+  if (!params?.id) {
+    return apiError("Missing car id", 400);
+  }
+
   const auth = await requireDealer();
   if (auth instanceof NextResponse) {
     return auth;
@@ -12,17 +23,23 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   const body = await request.json();
   const parsed = dealerCarPatchSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    return apiError("Invalid payload", 400);
   }
 
   const existing = await prisma.car.findFirst({ where: { id: params.id, dealerId: auth.userId } });
   if (!existing) {
-    return NextResponse.json({ error: "Car not found" }, { status: 404 });
+    return apiError("Car not found", 404);
   }
 
   if (parsed.data.action === "sold") {
     await prisma.car.update({ where: { id: params.id }, data: { status: "SOLD", isActive: false } });
-    return NextResponse.json({ ok: true });
+    await writeAuditLog({
+      actorUserId: auth.userId,
+      action: "DEALER_MARK_CAR_SOLD",
+      targetType: "Car",
+      targetId: params.id,
+    });
+    return apiSuccess({});
   }
 
   await prisma.car.update({
@@ -34,10 +51,26 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     },
   });
 
-  return NextResponse.json({ ok: true });
-}
+  await writeAuditLog({
+    actorUserId: auth.userId,
+    action: "DEALER_UPDATE_CAR",
+    targetType: "Car",
+    targetId: params.id,
+  });
 
-export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }): Promise<NextResponse> {
+  return apiSuccess({});
+});
+
+export const DELETE = withApiHandler(async (request: NextRequest, { params }: { params?: Record<string, string> } = {}): Promise<NextResponse> => {
+  const csrfError = validateCsrf(request);
+  if (csrfError) {
+    return apiError(csrfError, 403);
+  }
+
+  if (!params?.id) {
+    return apiError("Missing car id", 400);
+  }
+
   const auth = await requireDealer();
   if (auth instanceof NextResponse) {
     return auth;
@@ -45,9 +78,16 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
 
   const existing = await prisma.car.findFirst({ where: { id: params.id, dealerId: auth.userId } });
   if (!existing) {
-    return NextResponse.json({ error: "Car not found" }, { status: 404 });
+    return apiError("Car not found", 404);
   }
 
   await prisma.car.delete({ where: { id: params.id } });
-  return NextResponse.json({ ok: true });
-}
+  await writeAuditLog({
+    actorUserId: auth.userId,
+    action: "DEALER_DELETE_CAR",
+    targetType: "Car",
+    targetId: params.id,
+  });
+
+  return apiSuccess({});
+});

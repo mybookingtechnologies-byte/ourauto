@@ -1,33 +1,58 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
+import { apiError, apiSuccess, withApiHandler } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(request: NextRequest): Promise<NextResponse> {
+const MAX_LIMIT = 50;
+
+export const GET = withApiHandler(async (request: NextRequest): Promise<NextResponse> => {
   const { searchParams } = new URL(request.url);
-  const q = searchParams.get("q")?.trim();
+  const q = searchParams.get("q")?.trim().slice(0, 80);
   const fuel = searchParams.get("fuel")?.trim();
   const year = searchParams.get("year");
   const minPrice = searchParams.get("minPrice");
   const maxPrice = searchParams.get("maxPrice");
-  const sort = searchParams.get("sort") || "newest";
   const cursor = searchParams.get("cursor");
-  const limit = Number(searchParams.get("limit") || "12");
+  const parsedLimit = Number(searchParams.get("limit") || "12");
+  const limit = Math.min(MAX_LIMIT, Math.max(1, Number.isFinite(parsedLimit) ? parsedLimit : 12));
 
-  const where = {
+  if (fuel && !["PETROL", "DIESEL", "CNG", "ELECTRIC", "HYBRID", "OTHER"].includes(fuel)) {
+    return apiError("Invalid fuel type", 400);
+  }
+
+  const now = new Date();
+  const mutableWhere: Prisma.CarWhereInput = {
     isActive: true,
     status: "ACTIVE",
     dealer: { status: "APPROVED", role: "DEALER" },
-  } as const;
-
-  const mutableWhere: Record<string, unknown> = { ...where };
+    OR: [
+      {
+        isHotDeal: true,
+        hotDealUntil: { gt: now },
+      },
+      {
+        isFutureAd: true,
+        futureAdUntil: { gt: now },
+      },
+      {
+        isHotDeal: false,
+        isFutureAd: false,
+      },
+    ],
+  };
 
   if (q) {
-    mutableWhere.OR = [
-      { brand: { contains: q, mode: "insensitive" } },
-      { model: { contains: q, mode: "insensitive" } },
-      { city: { contains: q, mode: "insensitive" } },
+    mutableWhere.AND = [
+      {
+        OR: [
+          { brand: { contains: q, mode: "insensitive" } },
+          { model: { contains: q, mode: "insensitive" } },
+          { city: { contains: q, mode: "insensitive" } },
+        ],
+      },
     ];
   }
-  if (fuel) mutableWhere.fuel = fuel;
+  if (fuel) mutableWhere.fuel = fuel as never;
   if (year && /^\d{4}$/.test(year)) mutableWhere.year = Number(year);
   if (minPrice || maxPrice) {
     mutableWhere.price = {
@@ -35,13 +60,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       lte: maxPrice ? Number(maxPrice) : undefined,
     };
   }
-
-  const orderBy =
-    sort === "price_asc"
-      ? ({ price: "asc" } as const)
-      : sort === "price_desc"
-        ? ({ price: "desc" } as const)
-        : ({ createdAt: "desc" } as const);
+  const orderBy: Prisma.CarOrderByWithRelationInput[] = [{ isHotDeal: "desc" }, { isFutureAd: "desc" }, { createdAt: "desc" }];
 
   const cars = await prisma.car.findMany({
     where: mutableWhere,
@@ -59,7 +78,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         select: { id: true, url: true },
       },
       dealer: {
-        select: { id: true, status: true },
+        select: { status: true },
       },
     },
   });
@@ -76,12 +95,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     city: car.city,
     price: car.price.toString(),
     isUrgent: car.isUrgent,
+    isHotDeal: car.isHotDeal && !!car.hotDealUntil && car.hotDealUntil > now,
+    isFutureAd: car.isFutureAd && !!car.futureAdUntil && car.futureAdUntil > now,
     verifiedDealer: car.dealer.status === "APPROVED",
     media: car.media,
   }));
 
-  return NextResponse.json({
+  return apiSuccess({
     cars: normalized,
     nextCursor: hasMore ? normalized[normalized.length - 1]?.id || null : null,
   });
-}
+});

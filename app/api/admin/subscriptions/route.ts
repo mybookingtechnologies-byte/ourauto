@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
+import { apiError, apiSuccess, validateCsrf, withApiHandler } from "@/lib/api";
 import { requireAdmin } from "@/lib/apiAuth";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rateLimit";
 import { adminSubscriptionCreateSchema, adminSubscriptionUpdateSchema } from "@/lib/validators";
 
-export async function GET(): Promise<NextResponse> {
+export const GET = withApiHandler(async (_request: NextRequest): Promise<NextResponse> => {
   const admin = await requireAdmin();
   if (admin instanceof NextResponse) {
     return admin;
+  }
+
+  const allowed = await checkRateLimit(`admin:${admin.userId}`, 30, 60 * 60 * 1000);
+  if (!allowed) {
+    return rateLimitExceededResponse();
   }
 
   const subscriptions = await prisma.subscription.findMany({
@@ -14,19 +21,29 @@ export async function GET(): Promise<NextResponse> {
     take: 100,
   });
 
-  return NextResponse.json({ subscriptions });
-}
+  return apiSuccess({ subscriptions });
+});
 
-export async function POST(request: NextRequest): Promise<NextResponse> {
+export const POST = withApiHandler(async (request: NextRequest): Promise<NextResponse> => {
+  const csrfError = validateCsrf(request);
+  if (csrfError) {
+    return apiError(csrfError, 403);
+  }
+
   const admin = await requireAdmin();
   if (admin instanceof NextResponse) {
     return admin;
   }
 
+  const allowed = await checkRateLimit(`admin:${admin.userId}`, 30, 60 * 60 * 1000);
+  if (!allowed) {
+    return rateLimitExceededResponse();
+  }
+
   const body = await request.json();
   const parsed = adminSubscriptionCreateSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    return apiError("Invalid payload", 400);
   }
 
   const created = await prisma.subscription.create({
@@ -40,19 +57,29 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     },
   });
 
-  return NextResponse.json({ subscription: created });
-}
+  return apiSuccess({ subscription: created });
+});
 
-export async function PATCH(request: NextRequest): Promise<NextResponse> {
+export const PATCH = withApiHandler(async (request: NextRequest): Promise<NextResponse> => {
+  const csrfError = validateCsrf(request);
+  if (csrfError) {
+    return apiError(csrfError, 403);
+  }
+
   const admin = await requireAdmin();
   if (admin instanceof NextResponse) {
     return admin;
   }
 
+  const allowed = await checkRateLimit(`admin:${admin.userId}`, 30, 60 * 60 * 1000);
+  if (!allowed) {
+    return rateLimitExceededResponse();
+  }
+
   const body = await request.json();
   const parsed = adminSubscriptionUpdateSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    return apiError("Invalid payload", 400);
   }
 
   await prisma.subscription.update({
@@ -64,5 +91,5 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
     },
   });
 
-  return NextResponse.json({ ok: true });
-}
+  return apiSuccess({});
+});

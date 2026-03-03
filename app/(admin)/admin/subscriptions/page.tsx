@@ -30,7 +30,7 @@ export default function AdminSubscriptionsPage(): JSX.Element {
   return (
     <main className="mx-auto max-w-7xl px-6 py-12">
       <h1 className="mb-6 text-2xl font-bold">Subscription Management</h1>
-      <div className="grid gap-3 rounded-2xl bg-bgSecondary p-6 shadow-lg md:grid-cols-5">
+      <div className="grid gap-3 rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg dark:border-zinc-800 dark:bg-zinc-900 md:grid-cols-5">
         <Input placeholder="Dealer User ID" value={form.userId} onChange={(event) => setForm({ ...form, userId: event.target.value })} />
         <Input placeholder="Plan" value={form.planName} onChange={(event) => setForm({ ...form, planName: event.target.value })} />
         <Input placeholder="Amount" value={form.amount} onChange={(event) => setForm({ ...form, amount: event.target.value })} />
@@ -51,7 +51,7 @@ export default function AdminSubscriptionsPage(): JSX.Element {
       </div>
       <div className="mt-6 space-y-3">
         {subscriptions.map((subscription) => (
-          <div key={subscription.id} className="flex items-center justify-between rounded-2xl bg-bgSecondary p-6 shadow-lg">
+          <div key={subscription.id} className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
             <div>{subscription.planName} • ₹{subscription.amount}</div>
             <Button
               variant="secondary"

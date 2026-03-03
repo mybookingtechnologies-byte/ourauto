@@ -14,10 +14,10 @@ export default async function DealerMarketplacePage(): Promise<JSX.Element> {
   if (count < 3) {
     return (
       <main className="grid min-h-[70vh] place-items-center px-6 py-12">
-        <div className="rounded-2xl bg-bgSecondary p-6 text-center shadow-lg">
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-center shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
           <h1 className="text-xl font-bold">Marketplace Locked</h1>
           <p className="mt-2">List minimum 3 cars to activate marketplace.</p>
-          <Link href="/dealer/add-car" className="mt-4 inline-block rounded-2xl bg-accent px-4 py-2 font-semibold text-black">
+          <Link href="/dealer/add-car" className="mt-4 inline-block rounded-2xl bg-yellow-500 px-4 py-2 font-semibold text-black hover:bg-yellow-600">
             Add Car
           </Link>
         </div>

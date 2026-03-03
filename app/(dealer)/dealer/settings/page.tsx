@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -83,15 +84,16 @@ export default function DealerSettingsPage(): JSX.Element {
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
       <h1 className="mb-6 text-2xl font-bold">Dealer Settings</h1>
-      <div className="space-y-3 rounded-2xl bg-bgSecondary p-6 shadow-lg">
+      <div className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
         <h2 className="text-lg font-semibold">Profile Settings</h2>
-        <Input placeholder="Dealer Name" value={dealerName} onChange={(event) => setDealerName(event.target.value)} />
-        <Input placeholder="Business Name" value={businessName} onChange={(event) => setBusinessName(event.target.value)} />
-        <Input placeholder="City" value={city} onChange={(event) => setCity(event.target.value)} />
+        <Input aria-label="Dealer name" placeholder="Dealer Name" value={dealerName} onChange={(event) => setDealerName(event.target.value)} />
+        <Input aria-label="Business name" placeholder="Business Name" value={businessName} onChange={(event) => setBusinessName(event.target.value)} />
+        <Input aria-label="City" placeholder="City" value={city} onChange={(event) => setCity(event.target.value)} />
 
         <div className="space-y-2">
           <label className="text-sm font-medium">Profile Photo</label>
           <Input
+            aria-label="Profile photo upload"
             type="file"
             accept="image/png,image/jpeg,image/webp"
             onChange={(event) => {
@@ -100,13 +102,14 @@ export default function DealerSettingsPage(): JSX.Element {
               void handleUpload(file, "profile");
             }}
           />
-          {profileImage ? <img src={profileImage} alt="Profile preview" className="h-20 w-20 rounded-full object-cover" /> : null}
+          {profileImage ? <Image src={profileImage} alt="Profile preview" width={80} height={80} className="h-20 w-20 rounded-full object-cover" /> : null}
           {uploadingProfileImage ? <p className="text-xs text-zinc-500">Uploading profile photo...</p> : null}
         </div>
 
         <div className="space-y-2">
           <label className="text-sm font-medium">Cover Photo</label>
           <Input
+            aria-label="Cover photo upload"
             type="file"
             accept="image/png,image/jpeg,image/webp"
             onChange={(event) => {
@@ -115,11 +118,11 @@ export default function DealerSettingsPage(): JSX.Element {
               void handleUpload(file, "cover");
             }}
           />
-          {coverImage ? <img src={coverImage} alt="Cover preview" className="h-24 w-full rounded-xl object-cover" /> : null}
+          {coverImage ? <Image src={coverImage} alt="Cover preview" width={1200} height={96} className="h-24 w-full rounded-xl object-cover" /> : null}
           {uploadingCoverImage ? <p className="text-xs text-zinc-500">Uploading cover photo...</p> : null}
         </div>
 
-        <Textarea placeholder="Bio" value={bio} onChange={(event) => setBio(event.target.value)} rows={4} maxLength={500} />
+        <Textarea aria-label="Dealer bio" placeholder="Bio" value={bio} onChange={(event) => setBio(event.target.value)} rows={4} maxLength={500} />
 
         <Button
           onClick={async () => {
@@ -140,9 +143,9 @@ export default function DealerSettingsPage(): JSX.Element {
         {profileMessage ? <p className="text-sm text-zinc-500">{profileMessage}</p> : null}
       </div>
 
-      <div className="mt-6 space-y-3 rounded-2xl bg-bgSecondary p-6 shadow-lg">
-        <Input placeholder="Current Password" type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} />
-        <Input placeholder="New Password" type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} />
+      <div className="mt-6 space-y-3 rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
+        <Input aria-label="Current password" placeholder="Current Password" type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} />
+        <Input aria-label="New password" placeholder="New Password" type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} />
         <Button
           onClick={async () => {
             await fetch("/api/dealer/profile", {

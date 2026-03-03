@@ -38,6 +38,11 @@ enum InquiryStatus {
   CLOSED
 }
 
+enum PromotionType {
+  HOT_DEAL
+  FUTURE_AD
+}
+
 model User {
   id                String        @id @default(uuid())
   dealerName        String?
@@ -52,6 +57,11 @@ model User {
   coverImage        String?
   bio               String?
   boostRemaining    Int           @default(0)
+  referralCode      String        @unique @default(cuid())
+  referredBy        String?
+  futureAdCredits   Int           @default(0)
+  hotDealCredits    Int           @default(0)
+  totalListings     Int           @default(0)
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
   cars              Car[]
@@ -61,6 +71,7 @@ model User {
   sentMessages      ChatMessage[] @relation("SenderMessages")
   roomAsDealerOne   ChatRoom[]    @relation("DealerOne")
   roomAsDealerTwo   ChatRoom[]    @relation("DealerTwo")
+  auditLogs         AuditLog[]    @relation("AuditActor")
 }
 
 model Car {
@@ -80,6 +91,10 @@ model Car {
   plateNumber String?
   isUrgent    Boolean    @default(false)
   isFeatured  Boolean    @default(false)
+  isHotDeal   Boolean    @default(false)
+  hotDealUntil DateTime?
+  isFutureAd  Boolean    @default(false)
+  futureAdUntil DateTime?
   status      CarStatus  @default(ACTIVE)
   isActive    Boolean    @default(true)
   createdAt   DateTime   @default(now())
@@ -90,7 +105,30 @@ model Car {
   @@index([dealerId])
   @@index([brand])
   @@index([isUrgent])
+  @@index([isHotDeal, hotDealUntil])
+  @@index([isFutureAd, futureAdUntil])
+  @@index([status, isActive, createdAt(sort: Desc)])
+  @@index([status, isActive, price])
   @@unique([dealerId, plateNumber])
+}
+
+model PromotionPackage {
+  id        String        @id @default(uuid())
+  name      String
+  type      PromotionType
+  credits   Int
+  price     Int
+  isActive  Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model PlatformConfig {
+  id               String   @id @default("main")
+  hotDealMilestone Int      @default(10)
+  referralReward   Int      @default(5)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
 model CarMedia {
@@ -177,4 +215,28 @@ model ChatMessage {
 
   @@index([roomId])
   @@index([senderId])
+  @@index([roomId, createdAt(sort: Desc)])
+}
+
+model AdminSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  actorUserId String?
+  actor       User?    @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  action      String
+  targetType  String?
+  targetId    String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([actorUserId])
+  @@index([action])
+  @@index([createdAt(sort: Desc)])
 }
