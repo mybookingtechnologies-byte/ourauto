@@ -69,9 +69,8 @@ export const chatRoomCreateSchema = z.object({
   targetDealerId: z.string().uuid(),
 });
 
-export const adminDealerActionSchema = z.object({
-  userId: z.string().uuid(),
-  action: z.enum(["APPROVED", "SUSPENDED", "DELETE"]),
+export const adminDealerStatusSchema = z.object({
+  status: z.enum(["APPROVED", "REJECTED"]),
 });
 
 export const adminCarActionSchema = z.object({
@@ -98,6 +97,15 @@ export const dealerProfileUpdateSchema = z.object({
   dealerName: z.string().min(2).transform(cleanString).optional(),
   businessName: z.string().min(2).transform(cleanString).optional(),
   city: z.string().min(2).transform(cleanString).optional(),
+  profileImage: z
+    .string()
+    .refine((value) => value.startsWith("/uploads/") || /^https?:\/\//i.test(value), "Invalid image URL")
+    .optional(),
+  coverImage: z
+    .string()
+    .refine((value) => value.startsWith("/uploads/") || /^https?:\/\//i.test(value), "Invalid image URL")
+    .optional(),
+  bio: z.string().max(500).transform(cleanString).optional(),
 });
 
 export const dealerPasswordUpdateSchema = z.object({

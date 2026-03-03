@@ -3,44 +3,141 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function DealerSettingsPage(): JSX.Element {
   const [dealerName, setDealerName] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [city, setCity] = useState("");
+  const [profileImage, setProfileImage] = useState("");
+  const [coverImage, setCoverImage] = useState("");
+  const [bio, setBio] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileMessage, setProfileMessage] = useState("");
+  const [uploadingProfileImage, setUploadingProfileImage] = useState(false);
+  const [uploadingCoverImage, setUploadingCoverImage] = useState(false);
 
   useEffect(() => {
     const load = async (): Promise<void> => {
       const response = await fetch("/api/dealer/profile");
       if (!response.ok) return;
-      const data = (await response.json()) as { user?: { dealerName?: string | null; businessName?: string | null; city?: string | null } };
+      const data = (await response.json()) as {
+        user?: {
+          dealerName?: string | null;
+          businessName?: string | null;
+          city?: string | null;
+          profileImage?: string | null;
+          coverImage?: string | null;
+          bio?: string | null;
+        };
+      };
       setDealerName(data.user?.dealerName || "");
       setBusinessName(data.user?.businessName || "");
       setCity(data.user?.city || "");
+      setProfileImage(data.user?.profileImage || "");
+      setCoverImage(data.user?.coverImage || "");
+      setBio(data.user?.bio || "");
     };
     void load();
   }, []);
+
+  async function handleUpload(file: File, type: "profile" | "cover"): Promise<void> {
+    if (type === "profile") {
+      setUploadingProfileImage(true);
+    } else {
+      setUploadingCoverImage(true);
+    }
+    setProfileMessage("");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/dealer/profile/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = (await response.json()) as { url?: string; error?: string };
+      if (!response.ok || !data.url) {
+        setProfileMessage(data.error || "Image upload failed");
+        return;
+      }
+
+      if (type === "profile") {
+        setProfileImage(data.url);
+      } else {
+        setCoverImage(data.url);
+      }
+    } finally {
+      if (type === "profile") {
+        setUploadingProfileImage(false);
+      } else {
+        setUploadingCoverImage(false);
+      }
+    }
+  }
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
       <h1 className="mb-6 text-2xl font-bold">Dealer Settings</h1>
       <div className="space-y-3 rounded-2xl bg-bgSecondary p-6 shadow-lg">
+        <h2 className="text-lg font-semibold">Profile Settings</h2>
         <Input placeholder="Dealer Name" value={dealerName} onChange={(event) => setDealerName(event.target.value)} />
         <Input placeholder="Business Name" value={businessName} onChange={(event) => setBusinessName(event.target.value)} />
         <Input placeholder="City" value={city} onChange={(event) => setCity(event.target.value)} />
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Profile Photo</label>
+          <Input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (!file) return;
+              void handleUpload(file, "profile");
+            }}
+          />
+          {profileImage ? <img src={profileImage} alt="Profile preview" className="h-20 w-20 rounded-full object-cover" /> : null}
+          {uploadingProfileImage ? <p className="text-xs text-zinc-500">Uploading profile photo...</p> : null}
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Cover Photo</label>
+          <Input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (!file) return;
+              void handleUpload(file, "cover");
+            }}
+          />
+          {coverImage ? <img src={coverImage} alt="Cover preview" className="h-24 w-full rounded-xl object-cover" /> : null}
+          {uploadingCoverImage ? <p className="text-xs text-zinc-500">Uploading cover photo...</p> : null}
+        </div>
+
+        <Textarea placeholder="Bio" value={bio} onChange={(event) => setBio(event.target.value)} rows={4} maxLength={500} />
+
         <Button
           onClick={async () => {
-            await fetch("/api/dealer/profile", {
+            setSavingProfile(true);
+            setProfileMessage("");
+            const response = await fetch("/api/dealer/profile", {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ dealerName, businessName, city }),
+              body: JSON.stringify({ dealerName, businessName, city, profileImage, coverImage, bio }),
             });
+            setSavingProfile(false);
+            setProfileMessage(response.ok ? "Profile saved" : "Failed to save profile");
           }}
+          disabled={savingProfile || uploadingProfileImage || uploadingCoverImage}
         >
-          Update Profile
+          {savingProfile ? "Saving..." : "Save"}
         </Button>
+        {profileMessage ? <p className="text-sm text-zinc-500">{profileMessage}</p> : null}
       </div>
 
       <div className="mt-6 space-y-3 rounded-2xl bg-bgSecondary p-6 shadow-lg">

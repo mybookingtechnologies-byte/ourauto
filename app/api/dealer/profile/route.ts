@@ -12,7 +12,17 @@ export async function GET(): Promise<NextResponse> {
 
   const user = await prisma.user.findUnique({
     where: { id: auth.userId },
-    select: { dealerName: true, businessName: true, city: true, email: true, mobile: true },
+    select: {
+      id: true,
+      dealerName: true,
+      businessName: true,
+      city: true,
+      email: true,
+      mobile: true,
+      profileImage: true,
+      coverImage: true,
+      bio: true,
+    },
   });
   return NextResponse.json({ user });
 }
@@ -51,6 +61,9 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
       dealerName: profileParsed.data.dealerName,
       businessName: profileParsed.data.businessName,
       city: profileParsed.data.city,
+      profileImage: profileParsed.data.profileImage,
+      coverImage: profileParsed.data.coverImage,
+      bio: profileParsed.data.bio,
     },
   });
 

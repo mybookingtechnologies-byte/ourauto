@@ -9,7 +9,8 @@ type Dealer = {
   businessName: string | null;
   email: string;
   mobile: string;
-  status: "PENDING" | "APPROVED" | "SUSPENDED";
+  city: string | null;
+  status: "PENDING" | "APPROVED" | "REJECTED";
 };
 
 export default function AdminDealersPage(): JSX.Element {
@@ -26,25 +27,58 @@ export default function AdminDealersPage(): JSX.Element {
     void load();
   }, []);
 
+  const updateStatus = async (dealerId: string, status: "APPROVED" | "REJECTED"): Promise<void> => {
+    await fetch(`/api/admin/dealers/${dealerId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    await load();
+  };
+
+  const statusClass: Record<Dealer["status"], string> = {
+    PENDING: "bg-yellow-500/20 text-yellow-400",
+    APPROVED: "bg-green-500/20 text-green-400",
+    REJECTED: "bg-red-500/20 text-red-400",
+  };
+
   return (
     <main className="mx-auto max-w-7xl px-6 py-12">
       <h1 className="mb-6 text-2xl font-bold">Dealer Management</h1>
-      <div className="space-y-3">
-        {dealers.map((dealer) => (
-          <div key={dealer.id} className="rounded-2xl bg-bgSecondary p-6 shadow-lg">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="font-semibold">{dealer.businessName || dealer.dealerName}</h2>
-                <p className="text-sm text-zinc-500">{dealer.email} • {dealer.mobile} • {dealer.status}</p>
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={async () => { await fetch("/api/admin/dealers", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: dealer.id, action: "APPROVED" }) }); await load(); }}>Approve</Button>
-                <Button variant="secondary" onClick={async () => { await fetch("/api/admin/dealers", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: dealer.id, action: "SUSPENDED" }) }); await load(); }}>Suspend</Button>
-                <Button variant="outline" onClick={async () => { await fetch("/api/admin/dealers", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: dealer.id, action: "DELETE" }) }); await load(); }}>Delete</Button>
-              </div>
-            </div>
-          </div>
-        ))}
+      <div className="overflow-x-auto rounded-2xl bg-bgSecondary p-2 shadow-lg">
+        <table className="w-full min-w-[860px] text-left text-sm">
+          <thead>
+            <tr className="border-b border-zinc-700/50 text-zinc-400">
+              <th className="px-4 py-3 font-medium">Dealer Name</th>
+              <th className="px-4 py-3 font-medium">Email</th>
+              <th className="px-4 py-3 font-medium">Mobile</th>
+              <th className="px-4 py-3 font-medium">City</th>
+              <th className="px-4 py-3 font-medium">Status</th>
+              <th className="px-4 py-3 font-medium">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {dealers.map((dealer) => (
+              <tr key={dealer.id} className="border-b border-zinc-700/30 last:border-none">
+                <td className="px-4 py-3">{dealer.businessName || dealer.dealerName || "-"}</td>
+                <td className="px-4 py-3">{dealer.email}</td>
+                <td className="px-4 py-3">{dealer.mobile}</td>
+                <td className="px-4 py-3">{dealer.city || "-"}</td>
+                <td className="px-4 py-3">
+                  <span className={`inline-flex rounded-2xl px-2 py-1 text-xs font-semibold ${statusClass[dealer.status]}`}>
+                    {dealer.status}
+                  </span>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={async () => { await updateStatus(dealer.id, "APPROVED"); }}>Approve</Button>
+                    <Button size="sm" variant="outline" onClick={async () => { await updateStatus(dealer.id, "REJECTED"); }}>Reject</Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </main>
   );

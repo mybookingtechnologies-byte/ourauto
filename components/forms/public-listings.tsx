@@ -78,14 +78,35 @@ export function PublicListings(): JSX.Element {
   }, [cursor, loadCars]);
 
   return (
-    <section className="py-12">
-      <div className="mx-auto max-w-7xl px-6">
+    <section className="py-8 md:py-10">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
         <FilterBar filters={filters} onChange={setFilters} />
-        <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {cars.map((car) => (
-            <CarCard key={car.id} car={car} onInquire={setSelectedCarId} />
-          ))}
-        </div>
+        {loading && cars.length === 0 ? (
+          <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="rounded-2xl bg-bgSecondary p-4 shadow-lg">
+                <div className="aspect-video animate-pulse rounded-xl bg-zinc-300 dark:bg-zinc-800" />
+                <div className="mt-4 h-4 animate-pulse rounded bg-zinc-300 dark:bg-zinc-800" />
+                <div className="mt-2 h-4 w-2/3 animate-pulse rounded bg-zinc-300 dark:bg-zinc-800" />
+                <div className="mt-4 h-10 animate-pulse rounded bg-zinc-300 dark:bg-zinc-800" />
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {!loading && cars.length === 0 ? (
+          <div className="mt-8 grid min-h-[240px] place-items-center rounded-2xl border border-dashed border-zinc-300 bg-bgSecondary/40 p-6 text-center dark:border-zinc-700">
+            <p className="text-base font-medium">No Cars Found</p>
+          </div>
+        ) : null}
+
+        {cars.length > 0 ? (
+          <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {cars.map((car) => (
+              <CarCard key={car.id} car={car} onInquire={setSelectedCarId} />
+            ))}
+          </div>
+        ) : null}
         <div ref={sentinelRef} className="h-10" />
       </div>
       <InquiryModal carId={selectedCarId} onClose={() => setSelectedCarId(null)} />

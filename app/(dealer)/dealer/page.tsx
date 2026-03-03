@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/session";
 
@@ -19,9 +20,26 @@ export default async function DealerDashboardPage(): Promise<JSX.Element> {
 
   const user = await prisma.user.findUnique({ where: { id: session.userId } });
 
+  const statusLabel =
+    user?.status === "APPROVED"
+      ? "Approved"
+      : user?.status === "REJECTED"
+        ? "Rejected"
+        : "Approval Pending";
+
+  const statusClass =
+    user?.status === "APPROVED"
+      ? "bg-green-500/20 text-green-400"
+      : user?.status === "REJECTED"
+        ? "bg-red-500/20 text-red-400"
+        : "bg-yellow-500/20 text-yellow-400";
+
   return (
     <main className="mx-auto max-w-7xl px-6 py-12">
-      <h1 className="mb-6 text-2xl font-bold">Dealer Dashboard</h1>
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold">Dealer Dashboard</h1>
+        <Badge className={statusClass}>{statusLabel}</Badge>
+      </div>
       <div className="grid gap-4 md:grid-cols-5">
         <div className="rounded-2xl bg-bgSecondary p-6 shadow-lg">Total Cars: {totalCars}</div>
         <div className="rounded-2xl bg-bgSecondary p-6 shadow-lg">Active: {activeCars}</div>
