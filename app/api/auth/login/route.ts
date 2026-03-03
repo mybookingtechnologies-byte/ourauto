@@ -33,10 +33,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
 
-  if (user.status !== "APPROVED") {
-    return NextResponse.json({ error: "Account not approved" }, { status: 403 });
-  }
-
   const token = await generateToken({ userId: user.id, role: user.role });
 
   const response = NextResponse.json({ ok: true, role: user.role });

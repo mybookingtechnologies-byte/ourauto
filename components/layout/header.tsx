@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export function Header(): JSX.Element {
   return (
@@ -8,6 +9,7 @@ export function Header(): JSX.Element {
           OurAuto
         </Link>
         <nav className="flex items-center gap-3 text-sm">
+          <ThemeToggle />
           <Link href="/login" className="rounded-2xl bg-bgSecondary px-3 py-2">
             Login
           </Link>

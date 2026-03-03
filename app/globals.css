@@ -16,8 +16,11 @@
   --text: #f5f5f5;
 }
 
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
 body {
-  background-color: var(--bg-primary);
-  color: var(--text);
+  @apply bg-lightBg text-lightText dark:bg-darkBg dark:text-darkText;
   font-family: Inter, Arial, Helvetica, sans-serif;
 }
