@@ -10,7 +10,11 @@ const nextConfig = {
   experimental: {
     instrumentationHook: true,
   },
-  webpack: (config) => {
+  webpack: (config, { dev }) => {
+    if (!dev) {
+      config.cache = false;
+    }
+
     config.optimization = {
       ...config.optimization,
       minimize: true,
