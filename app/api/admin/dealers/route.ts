@@ -1,34 +1,58 @@
-import { NextResponse } from "next/server";
-import { apiSuccess, withApiHandler } from "@/lib/api";
-import { requireAdmin } from "@/lib/apiAuth";
-import { prisma } from "@/lib/prisma";
-import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rateLimit";
+import prisma from "@/lib/prisma";
+import { fail, ok } from "@/lib/api";
+import { requireAdminApi } from "@/lib/adminAuth";
+import { isRateLimited } from "@/lib/rateLimit";
+import { logError } from "@/lib/observability";
 
-export const GET = withApiHandler(async (): Promise<NextResponse> => {
-  const admin = await requireAdmin();
-  if (admin instanceof NextResponse) {
-    return admin;
+export async function GET(request: Request) {
+  try {
+    if (await isRateLimited(request, "admin-dealers", 20, 60_000)) {
+      return fail("Too many admin requests", 429);
+    }
+
+    const admin = await requireAdminApi(request);
+    if (admin.response) {
+      return admin.response;
+    }
+
+    const { searchParams } = new URL(request.url);
+    const page = Math.max(Number(searchParams.get("page") || 0), 0);
+    const take = Math.min(Math.max(Number(searchParams.get("take") || 50), 1), 100);
+    const skip = page * take;
+
+    const dealers = await prisma.user.findMany({
+      where: {
+        role: "DEALER",
+      },
+      select: {
+        id: true,
+        dealerName: true,
+        phone: true,
+        city: true,
+        createdAt: true,
+        lastLoginAt: true,
+        reputationScore: true,
+        spamCount: true,
+        duplicateCount: true,
+        adminDeletes: true,
+        hotDealCredits: true,
+        futureAdCredits: true,
+        _count: {
+          select: {
+            listings: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take,
+      skip,
+    });
+
+    return ok({ dealers, page, take });
+  } catch (error) {
+    logError("admin_dealers_error", error);
+    return fail("Unable to load dealers", 500);
   }
-
-  const allowed = await checkRateLimit(`admin:${admin.userId}`, 30, 60 * 60 * 1000);
-  if (!allowed) {
-    return rateLimitExceededResponse();
-  }
-
-  const dealers = await prisma.user.findMany({
-    where: { role: "DEALER" },
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      dealerName: true,
-      businessName: true,
-      email: true,
-      mobile: true,
-      city: true,
-      status: true,
-      createdAt: true,
-    },
-  });
-
-  return apiSuccess({ dealers });
-});
+}

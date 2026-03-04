@@ -1,91 +1,89 @@
-import bcrypt from "bcryptjs";
-import { NextRequest, NextResponse } from "next/server";
-import { writeAuditLog } from "@/lib/audit";
-import { apiError, apiSuccess, validateCsrf, withApiHandler } from "@/lib/api";
-import { requireDealer } from "@/lib/apiAuth";
-import { prisma } from "@/lib/prisma";
-import { dealerPasswordUpdateSchema, dealerProfileUpdateSchema } from "@/lib/validators";
+import prisma from "@/lib/prisma";
+import { fail, ok } from "@/lib/api";
+import { getUserFromRequest } from "@/lib/auth";
+import { verifyCsrf } from "@/lib/csrf";
+import { logError } from "@/lib/observability";
+import { dealerProfileSchema } from "@/lib/validation";
 
-export const GET = withApiHandler(async (): Promise<NextResponse> => {
-  const auth = await requireDealer();
-  if (auth instanceof NextResponse) {
-    return auth;
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { id: auth.userId },
-    select: {
-      id: true,
-      dealerName: true,
-      businessName: true,
-      city: true,
-      email: true,
-      mobile: true,
-      profileImage: true,
-      coverImage: true,
-      bio: true,
-    },
-  });
-  return apiSuccess({ user });
-});
-
-export const PATCH = withApiHandler(async (request: NextRequest): Promise<NextResponse> => {
-  const csrfError = validateCsrf(request);
-  if (csrfError) {
-    return apiError(csrfError, 403);
-  }
-
-  const auth = await requireDealer();
-  if (auth instanceof NextResponse) {
-    return auth;
-  }
-
-  const body = await request.json();
-  const passwordParsed = dealerPasswordUpdateSchema.safeParse(body);
-
-  if (passwordParsed.success) {
-    const user = await prisma.user.findUnique({ where: { id: auth.userId } });
+export async function GET(request: Request) {
+  try {
+    const user = await getUserFromRequest(request);
     if (!user) {
-      return apiError("Invalid password request", 400);
+      return fail("Unauthorized", 401);
     }
-    const valid = await bcrypt.compare(passwordParsed.data.currentPassword, user.passwordHash);
-    if (!valid) {
-      return apiError("Invalid current password", 400);
-    }
-    const passwordHash = await bcrypt.hash(passwordParsed.data.newPassword, 10);
-    await prisma.user.update({ where: { id: auth.userId }, data: { passwordHash } });
-    await writeAuditLog({
-      actorUserId: auth.userId,
-      action: "DEALER_CHANGE_PASSWORD",
-      targetType: "User",
-      targetId: auth.userId,
+
+    const profile = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: {
+        id: true,
+        dealerName: true,
+        phone: true,
+        city: true,
+        businessAddress: true,
+        aboutDealer: true,
+      },
     });
-    return apiSuccess({});
+
+    if (!profile) {
+      return fail("Dealer not found", 404);
+    }
+
+    return ok({ profile }, 200);
+  } catch (error) {
+    logError("dealer_profile_fetch_error", error);
+    return fail("Unable to load dealer profile", 500);
   }
+}
 
-  const profileParsed = dealerProfileUpdateSchema.safeParse(body);
-  if (!profileParsed.success) {
-    return apiError("Invalid profile payload", 400);
+export async function PATCH(request: Request) {
+  try {
+    const csrf = verifyCsrf(request);
+    if (!csrf.valid) {
+      return fail(csrf.reason || "Invalid CSRF token", 403);
+    }
+
+    const user = await getUserFromRequest(request);
+    if (!user) {
+      return fail("Unauthorized", 401);
+    }
+
+    let rawBody: unknown;
+
+    try {
+      rawBody = await request.json();
+    } catch {
+      return fail("Invalid request body", 400);
+    }
+
+    const parsed = dealerProfileSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return fail("Invalid profile payload", 400);
+    }
+
+    const { dealerName, phone, city, businessAddress, aboutDealer } = parsed.data;
+
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        dealerName,
+        phone,
+        city: city || null,
+        businessAddress: businessAddress || null,
+        aboutDealer: aboutDealer || null,
+      },
+      select: {
+        id: true,
+        dealerName: true,
+        phone: true,
+        city: true,
+        businessAddress: true,
+        aboutDealer: true,
+      },
+    });
+
+    return ok({ message: "Profile updated", profile: updated }, 200);
+  } catch (error) {
+    logError("dealer_profile_update_error", error);
+    return fail("Unable to update dealer profile", 500);
   }
-
-  await prisma.user.update({
-    where: { id: auth.userId },
-    data: {
-      dealerName: profileParsed.data.dealerName,
-      businessName: profileParsed.data.businessName,
-      city: profileParsed.data.city,
-      profileImage: profileParsed.data.profileImage,
-      coverImage: profileParsed.data.coverImage,
-      bio: profileParsed.data.bio,
-    },
-  });
-
-  await writeAuditLog({
-    actorUserId: auth.userId,
-    action: "DEALER_UPDATE_PROFILE",
-    targetType: "User",
-    targetId: auth.userId,
-  });
-
-  return apiSuccess({});
-});
+}

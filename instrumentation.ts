@@ -1,30 +1,38 @@
-let sdkStarted = false;
+import * as Sentry from "@sentry/nextjs";
+import { runBootEnvChecks } from "@/lib/startup";
+import { logError, logInfo } from "@/lib/observability";
 
-export async function register(): Promise<void> {
-  if (process.env.NEXT_RUNTIME === "nodejs") {
-    await import("./sentry.server.config");
-
-    if (!sdkStarted && process.env.OTEL_EXPORTER_OTLP_ENDPOINT) {
-      const runtimeRequire = eval("require") as (moduleId: string) => unknown;
-      const { NodeSDK } = runtimeRequire("@opentelemetry/sdk-node") as {
-        NodeSDK: new (options: Record<string, unknown>) => { start: () => void };
-      };
-      const { OTLPTraceExporter } = runtimeRequire("@opentelemetry/exporter-trace-otlp-http") as {
-        OTLPTraceExporter: new (options: Record<string, unknown>) => unknown;
-      };
-
-      const tracingSdk = new NodeSDK({
-        traceExporter: new OTLPTraceExporter({
-          url: `${process.env.OTEL_EXPORTER_OTLP_ENDPOINT.replace(/\/$/, "")}/v1/traces`,
-        }),
-      });
-
-      tracingSdk.start();
-      sdkStarted = true;
-    }
+function initSentry() {
+  const dsn = process.env.SENTRY_DSN;
+  if (!dsn) {
+    logInfo("sentry_disabled", { reason: "SENTRY_DSN_MISSING" });
+    return;
   }
 
-  if (process.env.NEXT_RUNTIME === "edge") {
-    await import("./sentry.edge.config");
+  Sentry.init({
+    dsn,
+    tracesSampleRate: 0.1,
+    sendDefaultPii: false,
+    beforeSend(event) {
+      if (event.request?.headers) {
+        delete event.request.headers.cookie;
+        delete event.request.headers.authorization;
+      }
+
+      return event;
+    },
+  });
+}
+
+export async function register() {
+  runBootEnvChecks();
+  initSentry();
+  try {
+    (globalThis as { addEventListener?: (name: string, callback: (event: PromiseRejectionEvent) => void) => void }).addEventListener?.("unhandledrejection", (event) => {
+      logError("unhandled_rejection", event.reason);
+      Sentry.captureException(event.reason);
+    });
+  } catch {
+    // no-op on runtimes without event hooks
   }
 }
