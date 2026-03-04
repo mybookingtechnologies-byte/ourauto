@@ -5,7 +5,7 @@ const requiredEnvSchema = z.object({
   JWT_SECRET: z.string().min(1),
   UPSTASH_REDIS_REST_URL: z.string().min(1),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1),
-  NEXT_PUBLIC_BASE_URL: z.string().min(1),
+  NEXT_PUBLIC_BASE_URL: z.string().min(1).default("http://localhost:3000"),
   CLOUDINARY_CLOUD_NAME: z.string().optional(),
   CLOUDINARY_API_KEY: z.string().optional(),
   CLOUDINARY_API_SECRET: z.string().optional(),
