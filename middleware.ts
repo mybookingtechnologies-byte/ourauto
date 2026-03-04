@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { rateLimit } from "@/lib/rateLimit";
 
-const dealerRoutes = ["/dealer"];
+const dealerProtectedRoutes = ["/dealer/marketplace", "/dealer/settings", "/dealer/listings", "/dealer/compare", "/dealer/add-car", "/dealer/chat", "/dealer/cars"];
 const adminRoutes = ["/admin"];
 
 async function hashIp(value: string): Promise<string> {
@@ -34,7 +34,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   const token = request.cookies.get("ourauto_token")?.value;
   const session = token ? await verifyToken(token) : null;
 
-  if (dealerRoutes.some((route) => pathname.startsWith(route))) {
+  if (dealerProtectedRoutes.some((route) => pathname.startsWith(route))) {
     if (!session) {
       return withSecurityHeaders(NextResponse.redirect(new URL("/login", request.url)));
     }

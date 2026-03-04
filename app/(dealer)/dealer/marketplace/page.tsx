@@ -2,7 +2,6 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { getBaseUrl } from "@/lib/baseUrl";
 import { meili } from "@/lib/meili";
-import { prisma } from "@/lib/prisma";
 import { readDb } from "@/lib/prismaReplica";
 import { redis } from "@/lib/redis";
 import { getSessionUser } from "@/lib/session";
@@ -70,21 +69,6 @@ export default async function DealerMarketplacePage({ searchParams }: PageProps)
   const limit = 12;
   const skip = (page - 1) * limit;
 
-  const count = await prisma.car.count({ where: { dealerId: session.userId } });
-  if (count < 3) {
-    return (
-      <main className="grid min-h-[70vh] place-items-center px-6 py-12">
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 text-center transition-all duration-300">
-          <h1 className="text-xl font-bold">Marketplace Locked</h1>
-          <p className="mt-2">List minimum 3 cars to activate marketplace.</p>
-          <Link href="/dealer/add-car" className="mt-4 inline-block rounded-2xl bg-yellow-500 px-4 py-2 font-semibold text-black hover:bg-yellow-600">
-            Add Car
-          </Link>
-        </div>
-      </main>
-    );
-  }
-
   const total = await readDb.car.count({
     where: {
       isActive: true,
@@ -145,6 +129,23 @@ export default async function DealerMarketplacePage({ searchParams }: PageProps)
         await redis.set(cacheKey, cars, { ex: 60 });
       }
     }
+  }
+
+  if (!cars.length) {
+    return (
+      <main className="mx-auto max-w-7xl px-6 py-12">
+        <section className="mb-8 space-y-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight md:text-4xl">Dealer Marketplace</h1>
+            <p className="mt-2 text-muted-foreground">Verified B2B Inventory for Professional Dealers</p>
+          </div>
+        </section>
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 text-center">
+          <h2 className="text-xl font-semibold">No listings available</h2>
+          <p className="mt-2 text-sm text-zinc-400">Try changing filters or check back later for new inventory.</p>
+        </div>
+      </main>
+    );
   }
 
   return (

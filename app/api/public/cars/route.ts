@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
-import { apiError, apiSuccess, withApiHandler } from "@/lib/api";
+import { apiError, withApiHandler } from "@/lib/api";
 import { readDb } from "@/lib/prismaReplica";
 
 const MAX_LIMIT = 50;
@@ -118,7 +118,7 @@ export const GET = withApiHandler(async (request: NextRequest): Promise<NextResp
     media: car.media,
   }));
 
-  return apiSuccess({
+  return NextResponse.json({
     cars: normalized,
     nextCursor: hasMore ? normalized[normalized.length - 1]?.id || null : null,
   });

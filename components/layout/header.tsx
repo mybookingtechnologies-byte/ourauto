@@ -80,6 +80,7 @@ export function Header(): JSX.Element {
   }, [pathname]);
 
   const isLoggedIn = role !== null;
+  const profileHref = role === "DEALER" ? (dealerId ? `/dealer/${dealerId}` : "/dealer") : "/admin";
   const initials =
     dealerName
       .split(" ")
@@ -146,7 +147,7 @@ export function Header(): JSX.Element {
             {isLoggedIn ? (
               <>
                 <Link
-                  href={role === "DEALER" && dealerId ? `/dealer/${dealerId}` : "/admin"}
+                  href={profileHref}
                   onClick={handleItemClick}
                   className="block px-4 py-2 text-sm text-zinc-900 transition hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800"
                 >
