@@ -1,6 +1,6 @@
 "use client";
 
-import type { ChangeEvent, JSX } from "react";
+import type { ChangeEvent } from "react";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 

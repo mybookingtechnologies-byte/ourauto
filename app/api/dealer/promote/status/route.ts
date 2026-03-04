@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { apiSuccess, withApiHandler } from "@/lib/api";
 import { requireDealer } from "@/lib/apiAuth";
 import { getPlatformConfig } from "@/lib/promotion";
 import { prisma } from "@/lib/prisma";
 
-export const GET = withApiHandler(async (_request: NextRequest): Promise<NextResponse> => {
+export const GET = withApiHandler(async (): Promise<NextResponse> => {
   const auth = await requireDealer();
   if (auth instanceof NextResponse) {
     return auth;

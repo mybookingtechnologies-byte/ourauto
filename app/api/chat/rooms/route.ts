@@ -9,7 +9,7 @@ function normalizeDealerPair(first: string, second: string): [string, string] {
   return first < second ? [first, second] : [second, first];
 }
 
-export const GET = withApiHandler(async (request: NextRequest): Promise<NextResponse> => {
+export const GET = withApiHandler(async (): Promise<NextResponse> => {
   const auth = await requireDealer();
   if (auth instanceof NextResponse) {
     return auth;

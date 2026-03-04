@@ -29,7 +29,7 @@ async function getSettings(): Promise<typeof defaultSettings> {
   };
 }
 
-export const GET = withApiHandler(async (_request: NextRequest): Promise<NextResponse> => {
+export const GET = withApiHandler(async (): Promise<NextResponse> => {
   const admin = await requireAdmin();
   if (admin instanceof NextResponse) {
     return admin;

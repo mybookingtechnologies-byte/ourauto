@@ -3,7 +3,17 @@ import pino from "pino";
 type LogMeta = Record<string, unknown>;
 
 const base = pino({
-  level: process.env.LOG_LEVEL || "info",
+  level: process.env.NODE_ENV === "production" ? "info" : "debug",
+  transport:
+    process.env.NODE_ENV === "development"
+      ? {
+          target: "pino-pretty",
+          options: {
+            colorize: true,
+            singleLine: true,
+          },
+        }
+      : undefined,
   base: {
     service: "ourauto",
     env: process.env.NODE_ENV || "development",
@@ -22,4 +32,5 @@ export const logger = {
   error: (message: string, meta?: LogMeta): void => {
     base.error(meta || {}, message);
   },
+  child: (meta: LogMeta) => base.child(meta),
 };

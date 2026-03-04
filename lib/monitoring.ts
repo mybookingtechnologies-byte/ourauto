@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { logger } from "@/lib/logger";
 
 export function captureException(error: unknown, context?: Record<string, unknown>): void {
@@ -6,8 +7,7 @@ export function captureException(error: unknown, context?: Record<string, unknow
     ...(context ? { context } : {}),
   });
 
-  // Sentry-ready placeholder:
-  // if (process.env.SENTRY_DSN) {
-  //   Sentry.captureException(error, { extra: context });
-  // }
+  if (process.env.SENTRY_DSN) {
+    Sentry.captureException(error, { extra: context });
+  }
 }

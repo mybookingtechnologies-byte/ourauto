@@ -12,7 +12,7 @@ import { redis } from "@/lib/redis";
 import { getActiveDealerPlan, getListingLimitForPlan } from "@/lib/subscription";
 import { createCarSchema } from "@/lib/validators";
 
-export const GET = withApiHandler(async (_request: NextRequest): Promise<NextResponse> => {
+export const GET = withApiHandler(async (): Promise<NextResponse> => {
   const auth = await requireDealer();
   if (auth instanceof NextResponse) {
     return auth;

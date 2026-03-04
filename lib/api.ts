@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
 import { captureException } from "@/lib/monitoring";
+import { trace } from "@opentelemetry/api";
+import { generateRequestId } from "@/lib/requestId";
 
 const MUTATING_METHODS = new Set(["POST", "PATCH", "PUT", "DELETE"]);
 
@@ -57,8 +59,12 @@ export type ApiHandler = (request: NextRequest, context?: { params?: Record<stri
 
 export function withApiHandler(handler: ApiHandler): ApiHandler {
   return async (request, context) => {
+    const requestId = request.headers.get("x-request-id") || generateRequestId();
+    const activeSpan = trace.getActiveSpan();
     try {
-      return await handler(request, context);
+      const response = await handler(request, context);
+      response.headers.set("x-request-id", requestId);
+      return response;
     } catch (error) {
       const nextError = error as { digest?: string; message?: string };
       if (nextError.digest?.includes("DYNAMIC_SERVER_USAGE") || nextError.message?.includes("Dynamic server usage")) {
@@ -68,13 +74,18 @@ export function withApiHandler(handler: ApiHandler): ApiHandler {
       captureException(error, {
         path: request.nextUrl.pathname,
         method: request.method,
+        requestId,
       });
       logger.error("Unhandled API error", {
         path: request.nextUrl.pathname,
         method: request.method,
+        requestId,
+        traceId: activeSpan?.spanContext().traceId,
         error: error instanceof Error ? error.message : "Unknown error",
       });
-      return apiError("Internal server error", 500);
+      const response = apiError("Internal server error", 500);
+      response.headers.set("x-request-id", requestId);
+      return response;
     }
   };
 }

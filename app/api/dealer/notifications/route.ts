@@ -4,7 +4,7 @@ import { requireDealer } from "@/lib/apiAuth";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rateLimit";
 
-export const GET = withApiHandler(async (_request: NextRequest): Promise<NextResponse> => {
+export const GET = withApiHandler(async (): Promise<NextResponse> => {
   const auth = await requireDealer();
   if (auth instanceof NextResponse) {
     return auth;

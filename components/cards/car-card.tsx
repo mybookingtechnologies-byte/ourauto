@@ -1,6 +1,5 @@
 "use client";
 
-import type { JSX } from "react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";

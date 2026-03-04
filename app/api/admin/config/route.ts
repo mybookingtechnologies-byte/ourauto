@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rateLimit";
 import { adminPlatformConfigSchema } from "@/lib/validators";
 
-export const GET = withApiHandler(async (_request: NextRequest): Promise<NextResponse> => {
+export const GET = withApiHandler(async (): Promise<NextResponse> => {
   const admin = await requireAdmin();
   if (admin instanceof NextResponse) {
     return admin;
