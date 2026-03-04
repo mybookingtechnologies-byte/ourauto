@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -202,7 +203,14 @@ export default function AddCarPage(): JSX.Element {
               {normalizedMedia.length > 0 ? (
                 normalizedMedia.map((item, index) => (
                   <div key={`${item.url}-${index}`} className="rounded-xl border border-zinc-200 p-2 dark:border-zinc-800">
-                    <img src={item.url} alt={`Car media ${index + 1}`} className="h-20 w-full rounded-lg object-cover" />
+                    <Image
+                      src={item.url}
+                      alt={`Car media ${index + 1}`}
+                      width={320}
+                      height={80}
+                      className="h-20 w-full rounded-lg object-cover"
+                      unoptimized
+                    />
                     <div className="mt-2 flex gap-1">
                       <Button
                         type="button"

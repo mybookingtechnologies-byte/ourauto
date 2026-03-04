@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 import ThemeToggle from "../ThemeToggle";
@@ -126,7 +127,7 @@ export function Header(): JSX.Element {
             className="h-10 w-10 overflow-hidden rounded-full border border-zinc-300 transition hover:border-zinc-500 dark:border-zinc-700 dark:hover:border-zinc-500"
           >
             {avatarUrl ? (
-              <img src={avatarUrl} alt="Profile" className="h-full w-full object-cover" />
+              <Image src={avatarUrl} alt="Profile" width={40} height={40} className="h-full w-full object-cover" unoptimized />
             ) : (
               <span className="grid h-full w-full place-items-center bg-zinc-900 text-sm font-semibold text-zinc-100">{initials}</span>
             )}

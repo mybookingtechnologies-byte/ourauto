@@ -10,6 +10,22 @@ const nextConfig = {
   experimental: {
     instrumentationHook: true,
   },
+  webpack: (config) => {
+    config.optimization = {
+      ...config.optimization,
+      minimize: true,
+    };
+
+    if (config.optimization?.minimizer) {
+      config.optimization.minimizer.forEach((plugin) => {
+        if (plugin?.options?.terserOptions) {
+          plugin.options.terserOptions.compress.drop_console = true;
+        }
+      });
+    }
+
+    return config;
+  },
   env: {
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
   },
@@ -22,5 +38,4 @@ const nextConfig = {
 
 export default withSentryConfig(nextConfig, {
   silent: true,
-  disableLogger: true,
 });

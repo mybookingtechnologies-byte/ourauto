@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,14 @@ export function CarCard({ car, onInquire }: Props) {
   return (
     <Card className={car.isHotDeal ? "border-red-300 dark:border-red-700" : undefined}>
       <div className="relative aspect-video overflow-hidden rounded-2xl bg-zinc-100 dark:bg-zinc-800">
-        <img src={images[activeIndex]?.url} alt={car.title} className="h-full w-full object-cover" />
+        <Image
+          src={images[activeIndex]?.url}
+          alt={car.title}
+          fill
+          sizes="(max-width: 768px) 100vw, 33vw"
+          className="object-cover"
+          unoptimized
+        />
         <div className="absolute left-2 top-2 flex gap-2">
           {car.isUrgent ? <Badge>Urgent</Badge> : null}
           {car.isHotDeal ? <Badge className="bg-red-600 text-white">🔥 Hot Deal</Badge> : null}
