@@ -1,0 +1,10 @@
+ALTER TABLE "Listing"
+ADD COLUMN "fuel" TEXT,
+ADD COLUMN "km" INTEGER,
+ADD COLUMN "owner" TEXT,
+ADD COLUMN "colour" TEXT,
+ADD COLUMN "transmission" TEXT NOT NULL DEFAULT 'Manual',
+ADD COLUMN "insuranceType" TEXT,
+ADD COLUMN "insuranceTill" TEXT,
+ADD COLUMN "remarks" TEXT,
+ADD COLUMN "images" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[];
