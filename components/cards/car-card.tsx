@@ -1,6 +1,7 @@
 "use client";
 
 import type { JSX } from "react";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -70,7 +71,12 @@ export function CarCard({ car, onInquire }: Props) {
             />
           ))}
         </div>
-        <Button onClick={() => onInquire(car.id)}>Inquire</Button>
+        <div className="flex items-center gap-3">
+          <Link href={`/dealer/cars/${car.id}`} className="text-sm text-yellow-500 transition-all duration-300 hover:text-yellow-400">
+            View Details
+          </Link>
+          <Button onClick={() => onInquire(car.id)}>Inquire</Button>
+        </div>
       </div>
     </Card>
   );

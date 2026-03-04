@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeAuditLog } from "@/lib/audit";
 import { apiError, apiSuccess, validateCsrf, withApiHandler } from "@/lib/api";
 import { requireAdmin } from "@/lib/apiAuth";
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rateLimit";
 import { adminCarActionSchema } from "@/lib/validators";
@@ -58,6 +59,7 @@ export const PATCH = withApiHandler(async (request: NextRequest): Promise<NextRe
       targetType: "Car",
       targetId: parsed.data.carId,
     });
+    logger.info("Admin deleted car", { adminUserId: admin.userId, carId: parsed.data.carId });
   }
   if (parsed.data.action === "FEATURE") {
     await prisma.car.update({ where: { id: parsed.data.carId }, data: { isFeatured: true } });
@@ -67,6 +69,7 @@ export const PATCH = withApiHandler(async (request: NextRequest): Promise<NextRe
       targetType: "Car",
       targetId: parsed.data.carId,
     });
+    logger.info("Admin featured car", { adminUserId: admin.userId, carId: parsed.data.carId });
   }
 
   return apiSuccess({});

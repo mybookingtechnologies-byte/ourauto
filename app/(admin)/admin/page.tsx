@@ -1,29 +1,59 @@
-import Link from "next/link";
+import { redirect } from "next/navigation";
+import { AdminDashboard } from "@/components/admin/AdminDashboard";
+import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { DealerManagement } from "@/components/admin/DealerManagement";
+import { ListingModeration } from "@/components/admin/ListingModeration";
+import { Reports } from "@/components/admin/Reports";
+import { Settings } from "@/components/admin/Settings";
 import { prisma } from "@/lib/prisma";
+import { getSessionUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage(): Promise<JSX.Element> {
-  const [totalDealers, pendingDealers, totalCars] = await Promise.all([
-    prisma.user.count({ where: { role: "DEALER" } }),
-    prisma.user.count({ where: { role: "DEALER", status: "PENDING" } }),
+  const session = await getSessionUser();
+  if (!session || session.role !== "ADMIN") {
+    redirect("/dealer/marketplace");
+  }
+
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const [totalDealers, totalListings, activeToday, topCitiesRaw, topBrandsRaw] = await Promise.all([
+    prisma.user.count({ where: { role: "DEALER", status: "APPROVED" } }),
     prisma.car.count(),
+    prisma.car.count({ where: { updatedAt: { gte: startOfDay }, isActive: true } }),
+    prisma.car.groupBy({
+      by: ["city"],
+      _count: { city: true },
+      orderBy: { _count: { city: "desc" } },
+      take: 5,
+    }),
+    prisma.car.groupBy({
+      by: ["brand"],
+      _count: { brand: true },
+      orderBy: { _count: { brand: "desc" } },
+      take: 5,
+    }),
   ]);
+
+  const topCities = topCitiesRaw.map((row) => ({ value: row.city, count: row._count.city }));
+  const topBrands = topBrandsRaw.map((row) => ({ value: row.brand, count: row._count.brand }));
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-12">
-      <h1 className="mb-6 text-2xl font-bold">Admin Dashboard</h1>
-      <div className="grid gap-4 md:grid-cols-4">
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">Total Dealers: {totalDealers}</div>
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">Pending: {pendingDealers}</div>
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">Cars: {totalCars}</div>
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">Revenue (mock): ₹0</div>
-      </div>
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Link href="/admin/dealers" className="rounded-2xl bg-yellow-500 px-4 py-2 font-semibold text-black hover:bg-yellow-600">Dealers</Link>
-        <Link href="/admin/cars" className="rounded-2xl bg-zinc-200 px-4 py-2 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100">Cars</Link>
-        <Link href="/admin/subscriptions" className="rounded-2xl bg-zinc-200 px-4 py-2 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100">Subscriptions</Link>
-        <Link href="/admin/settings" className="rounded-2xl bg-zinc-200 px-4 py-2 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100">Settings</Link>
+      <h1 className="mb-6 text-2xl font-bold">Admin Control Panel</h1>
+      <div className="grid gap-6 md:grid-cols-4">
+        <div className="md:col-span-1">
+          <AdminSidebar />
+        </div>
+        <div className="space-y-6 md:col-span-3">
+          <AdminDashboard totalDealers={totalDealers} totalListings={totalListings} activeToday={activeToday} />
+          <DealerManagement />
+          <ListingModeration />
+          <Reports topCities={topCities} topBrands={topBrands} growthMetric="Weekly growth metric will be surfaced from analytics pipeline." />
+          <Settings />
+        </div>
       </div>
     </main>
   );

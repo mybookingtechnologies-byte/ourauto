@@ -11,10 +11,13 @@ type AuditAction =
   | "DEALER_MARK_CAR_SOLD"
   | "DEALER_DELETE_CAR"
   | "DEALER_UPDATE_PROFILE"
-  | "DEALER_CHANGE_PASSWORD";
+  | "DEALER_CHANGE_PASSWORD"
+  | "SYSTEM_WEBHOOK_PAYMENT"
+  | "SYSTEM_QUEUE_JOB"
+  | "EXPERIMENT_CONVERSION";
 
 type AuditInput = {
-  actorUserId: string;
+  actorUserId?: string;
   action: AuditAction;
   targetType?: string;
   targetId?: string;

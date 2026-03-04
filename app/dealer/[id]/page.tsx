@@ -4,14 +4,14 @@ import { notFound } from "next/navigation";
 import { DealerCarGrid } from "@/components/forms/dealer-car-grid";
 import { Header } from "@/components/layout/header";
 import { isFutureAdActive, isHotDealActive } from "@/lib/promotion";
-import { prisma } from "@/lib/prisma";
+import { readDb } from "@/lib/prismaReplica";
 
 interface Props {
   params: { id: string };
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const dealer = await prisma.user.findUnique({
+  const dealer = await readDb.user.findUnique({
     where: { id: params.id },
     select: { dealerName: true, city: true, role: true, status: true },
   });
@@ -40,7 +40,7 @@ function getInitials(name: string): string {
 }
 
 export default async function DealerPublicProfilePage({ params }: Props): Promise<JSX.Element> {
-  const dealer = await prisma.user.findUnique({
+  const dealer = await readDb.user.findUnique({
     where: { id: params.id },
     select: {
       id: true,

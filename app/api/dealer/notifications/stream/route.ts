@@ -12,74 +12,55 @@ export const GET = async (request: NextRequest): Promise<NextResponse> => {
       return auth;
     }
 
-    const allowed = await checkRateLimit(`chat:${auth.userId}`, 120, 60 * 1000);
+    const allowed = await checkRateLimit(`notif-stream:${auth.userId}`, 120, 60 * 1000);
     if (!allowed) {
-      return apiError("Too many chat requests", 429);
+      return apiError("Too many notification requests", 429);
     }
 
-    const searchParams = new URL(request.url).searchParams;
-    const roomId = searchParams.get("roomId");
-    const cursor = searchParams.get("cursor");
-    if (!roomId) {
-      return apiError("roomId required", 400);
-    }
+    const cursor = new URL(request.url).searchParams.get("cursor");
+    let lastNotificationId: string | null = cursor;
+    let lastCreatedAt = new Date(0);
 
-    const room = await prisma.chatRoom.findFirst({
-      where: {
-        id: roomId,
-        OR: [{ dealerOneId: auth.userId }, { dealerTwoId: auth.userId }],
-      },
-      select: { id: true },
-    });
-    if (!room) {
-      return apiError("Room not found", 404);
-    }
-
-    let lastMessageId: string | null = cursor;
-    let lastMessageCreatedAt = new Date(0);
-
-    if (lastMessageId) {
-      const lastMessage = await prisma.chatMessage.findUnique({
-        where: { id: lastMessageId },
+    if (lastNotificationId) {
+      const last = await prisma.notification.findFirst({
+        where: { id: lastNotificationId, userId: auth.userId },
         select: { id: true, createdAt: true },
       });
-      if (lastMessage) {
-        lastMessageCreatedAt = lastMessage.createdAt;
-        lastMessageId = lastMessage.id;
+      if (last) {
+        lastNotificationId = last.id;
+        lastCreatedAt = last.createdAt;
       } else {
-        lastMessageId = null;
+        lastNotificationId = null;
       }
     }
 
     const stream = new ReadableStream({
       start(controller) {
         const encoder = new TextEncoder();
-        controller.enqueue(encoder.encode(`event: ready\ndata: ${JSON.stringify({ roomId })}\n\n`));
+        controller.enqueue(encoder.encode(`event: ready\ndata: ${JSON.stringify({ ok: true })}\n\n`));
 
-        const interval = setInterval(() => {
+        const poll = setInterval(() => {
           void (async () => {
             try {
-              const newMessages = await prisma.chatMessage.findMany({
+              const notifications = await prisma.notification.findMany({
                 where: {
-                  roomId,
+                  userId: auth.userId,
                   OR: [
-                    { createdAt: { gt: lastMessageCreatedAt } },
-                    ...(lastMessageId
-                      ? [{ createdAt: lastMessageCreatedAt, id: { gt: lastMessageId } }]
-                      : []),
+                    { createdAt: { gt: lastCreatedAt } },
+                    ...(lastNotificationId ? [{ createdAt: lastCreatedAt, id: { gt: lastNotificationId } }] : []),
                   ],
                 },
                 orderBy: [{ createdAt: "asc" }, { id: "asc" }],
                 take: 25,
               });
 
-              for (const message of newMessages) {
-                lastMessageCreatedAt = message.createdAt;
-                lastMessageId = message.id;
-                controller.enqueue(encoder.encode(`event: message\ndata: ${JSON.stringify(message)}\n\n`));
+              for (const notification of notifications) {
+                lastCreatedAt = notification.createdAt;
+                lastNotificationId = notification.id;
+                controller.enqueue(encoder.encode(`event: notification\ndata: ${JSON.stringify(notification)}\n\n`));
               }
             } catch (error) {
-              logger.error("Chat SSE stream polling failed", {
+              logger.error("Notification stream polling failed", {
                 error: error instanceof Error ? error.message : "unknown",
               });
             }
@@ -91,7 +72,7 @@ export const GET = async (request: NextRequest): Promise<NextResponse> => {
         }, 15000);
 
         request.signal.addEventListener("abort", () => {
-          clearInterval(interval);
+          clearInterval(poll);
           clearInterval(keepAlive);
           controller.close();
         });
@@ -110,7 +91,7 @@ export const GET = async (request: NextRequest): Promise<NextResponse> => {
     if (nextError.digest?.includes("DYNAMIC_SERVER_USAGE") || nextError.message?.includes("Dynamic server usage")) {
       throw error;
     }
-    logger.error("Chat stream initialization failed", {
+    logger.error("Notification stream initialization failed", {
       error: error instanceof Error ? error.message : "unknown",
     });
     return apiError("Internal server error", 500);

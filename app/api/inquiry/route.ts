@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { apiError, apiSuccess, getClientIp, withApiHandler } from "@/lib/api";
+import { assignVariant, trackExperimentConversion } from "@/lib/experiment";
 import { prisma } from "@/lib/prisma";
+import { enqueueNotificationJob } from "@/lib/queue";
 import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rateLimit";
 import { inquirySchema } from "@/lib/validators";
 
@@ -25,6 +27,7 @@ export const POST = withApiHandler(async (request: NextRequest): Promise<NextRes
     include: {
       dealer: {
         select: {
+          id: true,
           email: true,
           businessName: true,
         },
@@ -51,6 +54,27 @@ export const POST = withApiHandler(async (request: NextRequest): Promise<NextRes
       to: [car.dealer.email],
       subject: `New inquiry for ${car.brand} ${car.model}`,
       html: `<p>Name: ${parsed.data.name}</p><p>Mobile: ${parsed.data.mobile}</p><p>Message: ${parsed.data.message}</p>`,
+    });
+  }
+
+  void enqueueNotificationJob(
+    car.dealerId,
+    "New Inquiry",
+    `You received a new inquiry for ${car.brand} ${car.model}`,
+    {
+      carId: car.id,
+      dealerName: car.dealer.businessName,
+    },
+  );
+
+  const variant = await assignVariant("INQUIRY_CTA", parsed.data.mobile);
+  if (variant) {
+    await trackExperimentConversion({
+      key: "INQUIRY_CTA",
+      variant,
+      metadata: {
+        carId: parsed.data.carId,
+      },
     });
   }
 

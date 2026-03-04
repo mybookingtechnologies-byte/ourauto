@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 import { apiError, apiSuccess, withApiHandler } from "@/lib/api";
-import { prisma } from "@/lib/prisma";
+import { readDb } from "@/lib/prismaReplica";
 
 const MAX_LIMIT = 50;
 
@@ -79,7 +79,7 @@ export const GET = withApiHandler(async (request: NextRequest): Promise<NextResp
   }
   const orderBy: Prisma.CarOrderByWithRelationInput[] = [{ isHotDeal: "desc" }, { isFutureAd: "desc" }, { createdAt: "desc" }];
 
-  const cars = await prisma.car.findMany({
+  const cars = await readDb.car.findMany({
     where: mutableWhere,
     orderBy,
     take: limit + 1,

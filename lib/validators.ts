@@ -81,7 +81,7 @@ export const adminCarActionSchema = z.object({
 
 export const adminSubscriptionCreateSchema = z.object({
   userId: z.string().uuid(),
-  planName: z.string().min(2).transform(cleanString),
+  planName: z.enum(["FREE", "PRO", "ENTERPRISE"]),
   amount: z.coerce.number().positive(),
   startsAt: z.string().datetime(),
   expiresAt: z.string().datetime(),
@@ -89,7 +89,7 @@ export const adminSubscriptionCreateSchema = z.object({
 
 export const adminSubscriptionUpdateSchema = z.object({
   id: z.string().uuid(),
-  planName: z.string().min(2).transform(cleanString).optional(),
+  planName: z.enum(["FREE", "PRO", "ENTERPRISE"]).optional(),
   amount: z.coerce.number().positive().optional(),
   isActive: z.boolean().optional(),
 });

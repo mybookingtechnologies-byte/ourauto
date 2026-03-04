@@ -1,29 +1,25 @@
-type LogLevel = "info" | "warn" | "error";
+import pino from "pino";
 
 type LogMeta = Record<string, unknown>;
 
-function write(level: LogLevel, message: string, meta?: LogMeta): void {
-  const payload = {
-    level,
-    message,
-    timestamp: new Date().toISOString(),
-    ...(meta ? { meta } : {}),
-  };
-
-  const line = JSON.stringify(payload);
-  if (level === "error") {
-    console.error(line);
-    return;
-  }
-  if (level === "warn") {
-    console.warn(line);
-    return;
-  }
-  console.log(line);
-}
+const base = pino({
+  level: process.env.LOG_LEVEL || "info",
+  base: {
+    service: "ourauto",
+    env: process.env.NODE_ENV || "development",
+    region: process.env.VERCEL_REGION || process.env.APP_REGION || "unknown",
+  },
+  timestamp: pino.stdTimeFunctions.isoTime,
+});
 
 export const logger = {
-  info: (message: string, meta?: LogMeta): void => write("info", message, meta),
-  warn: (message: string, meta?: LogMeta): void => write("warn", message, meta),
-  error: (message: string, meta?: LogMeta): void => write("error", message, meta),
+  info: (message: string, meta?: LogMeta): void => {
+    base.info(meta || {}, message);
+  },
+  warn: (message: string, meta?: LogMeta): void => {
+    base.warn(meta || {}, message);
+  },
+  error: (message: string, meta?: LogMeta): void => {
+    base.error(meta || {}, message);
+  },
 };

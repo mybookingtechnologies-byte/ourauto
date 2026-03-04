@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeAuditLog } from "@/lib/audit";
 import { apiError, apiSuccess, validateCsrf, withApiHandler } from "@/lib/api";
 import { requireDealer } from "@/lib/apiAuth";
+import { meili } from "@/lib/meili";
 import { prisma } from "@/lib/prisma";
+import { redis } from "@/lib/redis";
 import { dealerCarPatchSchema } from "@/lib/validators";
 
 export const PATCH = withApiHandler(async (request: NextRequest, { params }: { params?: Record<string, string> } = {}): Promise<NextResponse> => {
@@ -33,6 +35,18 @@ export const PATCH = withApiHandler(async (request: NextRequest, { params }: { p
 
   if (parsed.data.action === "sold") {
     await prisma.car.update({ where: { id: params.id }, data: { status: "SOLD", isActive: false } });
+    try {
+      await redis?.del(`car:${params.id}`);
+    } catch {
+      // Ignore cache invalidation errors.
+    }
+    if (meili) {
+      try {
+        await meili.index("cars").deleteDocument(params.id);
+      } catch {
+        // Ignore search index sync errors.
+      }
+    }
     await writeAuditLog({
       actorUserId: auth.userId,
       action: "DEALER_MARK_CAR_SOLD",
@@ -42,7 +56,7 @@ export const PATCH = withApiHandler(async (request: NextRequest, { params }: { p
     return apiSuccess({});
   }
 
-  await prisma.car.update({
+  const updated = await prisma.car.update({
     where: { id: params.id },
     data: {
       title: parsed.data.title ?? existing.title,
@@ -50,6 +64,28 @@ export const PATCH = withApiHandler(async (request: NextRequest, { params }: { p
       price: parsed.data.price ?? existing.price,
     },
   });
+
+  try {
+    await redis?.del(`car:${params.id}`);
+  } catch {
+    // Ignore cache invalidation errors.
+  }
+
+  if (meili) {
+    try {
+      await meili.index("cars").addDocuments([
+        {
+          id: updated.id,
+          title: updated.title,
+          city: updated.city,
+          fuel: updated.fuel,
+          price: Number(updated.price),
+        },
+      ]);
+    } catch {
+      // Ignore search index sync errors.
+    }
+  }
 
   await writeAuditLog({
     actorUserId: auth.userId,
@@ -82,6 +118,18 @@ export const DELETE = withApiHandler(async (request: NextRequest, { params }: { 
   }
 
   await prisma.car.delete({ where: { id: params.id } });
+  try {
+    await redis?.del(`car:${params.id}`);
+  } catch {
+    // Ignore cache invalidation errors.
+  }
+  if (meili) {
+    try {
+      await meili.index("cars").deleteDocument(params.id);
+    } catch {
+      // Ignore search index sync errors.
+    }
+  }
   await writeAuditLog({
     actorUserId: auth.userId,
     action: "DEALER_DELETE_CAR",
