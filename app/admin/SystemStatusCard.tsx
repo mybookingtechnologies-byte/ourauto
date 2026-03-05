@@ -8,10 +8,23 @@ type EnvCheckResponse = {
   DATABASE_URL?: EnvStatus;
   JWT_SECRET?: EnvStatus;
   RESEND_API_KEY?: EnvStatus;
+  EMAIL_HOST?: EnvStatus;
+  EMAIL_PORT?: EnvStatus;
+  EMAIL_USER?: EnvStatus;
+  EMAIL_PASS?: EnvStatus;
   NEXT_PUBLIC_APP_URL?: EnvStatus;
 };
 
-const ENV_KEYS = ["DATABASE_URL", "JWT_SECRET", "RESEND_API_KEY", "NEXT_PUBLIC_APP_URL"] as const;
+const ENV_KEYS = [
+  "DATABASE_URL",
+  "JWT_SECRET",
+  "RESEND_API_KEY",
+  "EMAIL_HOST",
+  "EMAIL_PORT",
+  "EMAIL_USER",
+  "EMAIL_PASS",
+  "NEXT_PUBLIC_APP_URL",
+] as const;
 
 export default function SystemStatusCard() {
   const [status, setStatus] = useState<EnvCheckResponse | null>(null);

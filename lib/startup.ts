@@ -1,7 +1,7 @@
 import { logError, logInfo } from "@/lib/observability";
 
 const REQUIRED_ENV_KEYS = ["DATABASE_URL", "JWT_SECRET", "NEXT_PUBLIC_APP_URL"] as const;
-const OPTIONAL_ENV_KEYS = ["RESEND_API_KEY", "REDIS_URL", "SENTRY_DSN"] as const;
+const OPTIONAL_ENV_KEYS = ["RESEND_API_KEY", "EMAIL_HOST", "EMAIL_PORT", "EMAIL_USER", "EMAIL_PASS", "REDIS_URL", "SENTRY_DSN"] as const;
 
 let hasRunBootChecks = false;
 

@@ -4,7 +4,16 @@ import { fail, ok } from "@/lib/api";
 import { logError, logInfo } from "@/lib/observability";
 import { isRateLimited } from "@/lib/rateLimit";
 
-const REQUIRED_ENV_KEYS = ["DATABASE_URL", "JWT_SECRET", "RESEND_API_KEY", "NEXT_PUBLIC_APP_URL"] as const;
+const REQUIRED_ENV_KEYS = [
+  "DATABASE_URL",
+  "JWT_SECRET",
+  "RESEND_API_KEY",
+  "EMAIL_HOST",
+  "EMAIL_PORT",
+  "EMAIL_USER",
+  "EMAIL_PASS",
+  "NEXT_PUBLIC_APP_URL",
+] as const;
 
 export async function GET(request: Request) {
   try {
@@ -21,6 +30,10 @@ export async function GET(request: Request) {
       DATABASE_URL: getEnvPresence("DATABASE_URL"),
       JWT_SECRET: getEnvPresence("JWT_SECRET"),
       RESEND_API_KEY: getEnvPresence("RESEND_API_KEY"),
+      EMAIL_HOST: getEnvPresence("EMAIL_HOST"),
+      EMAIL_PORT: getEnvPresence("EMAIL_PORT"),
+      EMAIL_USER: getEnvPresence("EMAIL_USER"),
+      EMAIL_PASS: getEnvPresence("EMAIL_PASS"),
       NEXT_PUBLIC_APP_URL: getEnvPresence("NEXT_PUBLIC_APP_URL"),
     };
 
@@ -36,6 +49,10 @@ export async function GET(request: Request) {
       DATABASE_URL: "missing",
       JWT_SECRET: "missing",
       RESEND_API_KEY: "missing",
+      EMAIL_HOST: "missing",
+      EMAIL_PORT: "missing",
+      EMAIL_USER: "missing",
+      EMAIL_PASS: "missing",
       NEXT_PUBLIC_APP_URL: "missing",
     }, 200);
   }
