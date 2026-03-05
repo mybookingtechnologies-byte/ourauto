@@ -26,9 +26,5 @@ export function runBootEnvChecks() {
     logError("required_env_missing", error, {
       missingKeys: missingRequired,
     });
-
-    if (process.env.NODE_ENV === "production") {
-      throw error;
-    }
   }
 }

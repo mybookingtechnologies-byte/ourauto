@@ -41,14 +41,13 @@ function resolveBoostType(rawBoostType?: BoostType) {
 
 export async function GET(request: Request) {
   const requestId = request.headers.get("x-request-id") || undefined;
+  const { searchParams } = new URL(request.url);
+  const dealerId = searchParams.get("dealerId")?.trim();
+  const page = Math.max(Number(searchParams.get("page") || 0), 0);
+  const take = Math.min(Math.max(Number(searchParams.get("take") || 20), 1), 50);
+  const skip = page * take;
 
   try {
-    const { searchParams } = new URL(request.url);
-    const dealerId = searchParams.get("dealerId")?.trim();
-    const page = Math.max(Number(searchParams.get("page") || 0), 0);
-    const take = Math.min(Math.max(Number(searchParams.get("take") || 20), 1), 50);
-    const skip = page * take;
-
     if (dealerId) {
       const user = await getUserFromRequest(request);
       if (!user) {
@@ -114,7 +113,12 @@ export async function GET(request: Request) {
     return ok({ listings: marketplaceListings, page, take }, 200);
   } catch (error) {
     logError("fetch_listings_error", error, { requestId });
-    return fail("Unable to load listings", 500);
+
+    if (!dealerId) {
+      return ok({ listings: [], page, take, degraded: true }, 200);
+    }
+
+    return fail("Unable to load listings", 503);
   }
 }
 

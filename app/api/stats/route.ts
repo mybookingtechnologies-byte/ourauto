@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { fail, ok } from "@/lib/api";
+import { ok } from "@/lib/api";
 import { getOrSetCache } from "@/lib/cache";
 import { logError } from "@/lib/observability";
 
@@ -17,6 +17,6 @@ export async function GET(request: Request) {
     return ok(payload, 200);
   } catch (error) {
     logError("public_stats_error", error, { requestId });
-    return fail("Unable to load stats", 500);
+    return ok({ listings: 0, dealers: 0, unreadMessages: 0, degraded: true }, 200);
   }
 }
